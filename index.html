@@ -437,6 +437,25 @@ function pnFromP(p){
   var g0=partes[0]||p.transmitentes||[];
   return pn(g0);
 }
+function getUserById(id){
+  if(!A.users)return null;
+  for(var i=0;i<A.users.length;i++)if(A.users[i].id===id)return A.users[i];
+  return null;
+}
+function getUserByName(nm){
+  if(!A.users||!nm)return null;
+  for(var i=0;i<A.users.length;i++)if(A.users[i].name===nm)return A.users[i];
+  return null;
+}
+function avBadge(name,photo,size){
+  size=size||30;
+  var fs=Math.round(size*0.4);
+  if(photo){
+    return '<img src="'+photo+'" style="width:'+size+'px;height:'+size+'px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">';
+  }
+  return '<div class="user-badge" style="width:'+size+'px;height:'+size+'px;font-size:'+fs+'px;flex-shrink:0;display:flex;align-items:center;justify-content:center">'+ini(name)+'</div>';
+}
+
 function pnAll(p){
   // Get all partes names for search
   var all="";
@@ -698,7 +717,7 @@ function appHTML(){
   return '<div class="topbar no-print">'
   +'<div class="topbar-brand">1 Tabelionato de Notas e Registro de Imoveis de Maraba<span>Sistema de Gestao de Protocolos v4.0</span><span style="color:rgba(255,255,255,.5);font-family:var(--mono);font-size:10px;display:block;font-weight:400">Dev: Marcos Souza de Castro - (94) 99176-8840</span></div>'
   +'<div class="flex items-center gap-sm" style="color:rgba(255,255,255,.7);font-size:11px"><div class="sync-dot'+(A.sync?" syncing":"")+'"></div><span class="sync-text">'+(A.sync?"Salvando...":"Sincronizado")+'</span></div>'
-  +'<div class="topbar-user"><div class="user-badge">'+ini(A.user.name)+'</div><span>'+ex(A.user.name)+'</span>'
+  +'<div class="topbar-user">'+avBadge(A.user.name,A.user.photo,30)+'<span>'+ex(A.user.name)+'</span>'
   +'<span style="font-size:10px;opacity:.6;background:rgba(255,255,255,.1);padding:2px 7px;border-radius:10px">'+roleLabel(A.user.role)+'</span>'
   +'<button class="btn-logout" id="bTheme" title="Alternar tema" style="background:none;border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;cursor:pointer;color:var(--text);margin-right:4px">'+(A.user&&A.user.tema==="dark"?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon"></i>')+'</button>'
 +'<button class="btn-logout" id="bOut"><i class="ti ti-logout"></i> Sair</button></div>'
@@ -1880,7 +1899,7 @@ function rPrio(){
     for(var ri=0;ri<recados.length;ri++){
       var rc=recados[ri];
       h+='<div style="display:flex;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border)">'
-        +'<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">'+ex((rc.autor||"?").charAt(0).toUpperCase())+'</div>'
+        +(function(){var ru=getUserByName(rc.autor);var ph=ru?ru.photo:null;if(ph)return '<img src="'+ph+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">';return '<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">'+ex((rc.autor||"?").charAt(0).toUpperCase())+'</div>';})()
         +'<div style="flex:1">'
         +'<div style="display:flex;justify-content:space-between;align-items:center">'
         +'<span style="font-size:12px;font-weight:700;color:var(--text)">'+ex(rc.autor||"Supervisor")+'</span>'
@@ -6539,15 +6558,21 @@ function rMinhaConta(){
   // Profile card
   h+='<div class="card" style="margin-bottom:1rem">'
     +'<div style="display:flex;align-items:center;gap:1.25rem;padding:.5rem 0">'
-    +'<div style="width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;flex-shrink:0">'
-    +ex((u.name||u.email||'?').charAt(0).toUpperCase())
+    +'<div style="position:relative;flex-shrink:0">'
+    +(u.photo
+      ?'<img src="'+u.photo+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover" alt="">'
+      :'<div style="width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700">'+ex((u.name||u.email||'?').charAt(0).toUpperCase())+'</div>')
+    +'<label for="mcPhotoInput" style="position:absolute;bottom:-2px;right:-2px;background:var(--accent);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--surface)" title="Alterar foto"><i class="ti ti-camera" style="font-size:13px"></i></label>'
+    +'<input type="file" id="mcPhotoInput" accept="image/*" style="display:none">'
     +'</div>'
     +'<div style="flex:1">'
     +'<div style="font-size:20px;font-weight:700;color:var(--text)">'+ex(u.name||'Sem nome')+'</div>'
     +'<div style="font-size:13px;color:var(--muted);margin-top:2px">'+ex(u.email||'')+'</div>'
     +'<div style="margin-top:6px"><span class="badge badge-compra" style="font-size:11px">'+roleLabel(u.role)+'</span></div>'
+    +(u.photo?'<button class="btn btn-secondary btn-sm" id="bMCPhotoRemove" style="margin-top:6px;font-size:11px;padding:2px 8px"><i class="ti ti-trash"></i> Remover foto</button>':'')
     +'</div>'
     +'</div>'
+    +'<div id="mcPhotoErr" style="margin-top:.5rem"></div>'
     +'</div>';
 
   // Theme toggle
@@ -6594,6 +6619,51 @@ function rMinhaConta(){
 function bindMinhaConta(){
   var u=A.user;
   if(!u)return;
+
+  // Profile photo upload
+  var photoInp=document.getElementById('mcPhotoInput');
+  if(photoInp)photoInp.onchange=function(){
+    var file=photoInp.files&&photoInp.files[0];
+    if(!file)return;
+    if(!file.type.match(/^image\//)){toast('Selecione um arquivo de imagem.','error');return;}
+    var errEl=document.getElementById('mcPhotoErr');
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var img=new Image();
+      img.onload=function(){
+        var size=160; // output size
+        var canvas=document.createElement('canvas');
+        canvas.width=size;canvas.height=size;
+        var ctx=canvas.getContext('2d');
+        // Cover-crop center square
+        var srcSize=Math.min(img.width,img.height);
+        var sx=(img.width-srcSize)/2,sy=(img.height-srcSize)/2;
+        ctx.drawImage(img,sx,sy,srcSize,srcSize,0,0,size,size);
+        var dataUrl=canvas.toDataURL('image/jpeg',0.7);
+        ssy(true);
+        db.collection('users').doc(u.id).update({photo:dataUrl}).then(function(){
+          ssy(false);u.photo=dataUrl;toast('Foto atualizada!');render();
+        }).catch(function(e){ssy(false);errEl.innerHTML='<div class="error-msg">'+e.message+'</div>';});
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove photo
+  var bRmPhoto=document.getElementById('bMCPhotoRemove');
+  if(bRmPhoto)bRmPhoto.onclick=function(){
+    if(!confirm('Remover sua foto de perfil?'))return;
+    ssy(true);
+    db.collection('users').doc(u.id).update({photo:firebase.firestore.FieldValue.delete()}).then(function(){
+      ssy(false);delete u.photo;toast('Foto removida.');render();
+    }).catch(function(e){
+      // fallback if FieldValue not available
+      db.collection('users').doc(u.id).update({photo:''}).then(function(){
+        ssy(false);u.photo='';toast('Foto removida.');render();
+      });
+    });
+  };
 
   // Theme toggle
   var bTh=document.getElementById('bMCTheme');
