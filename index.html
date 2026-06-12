@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>1 Tabelionato de Notas de Maraba</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a3a5c"/><path d="M18 14h28v36l-6-5-4 5-4-5-4 5-4-5-6 5z" fill="%23fff"/><line x1="22" y1="22" x2="42" y2="22" stroke="%231a3a5c" stroke-width="2.5"/><line x1="22" y1="29" x2="42" y2="29" stroke="%231a3a5c" stroke-width="2.5"/><line x1="22" y1="36" x2="36" y2="36" stroke="%231a3a5c" stroke-width="2.5"/></svg>">
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -794,7 +795,7 @@ function rDash(){
 function rProc(){
   // Default period: last 6 months if no date filter set
   var defaultFrom="";
-  if(!A.fdf&&!A.fdt&&!A.pipe&&!A.fnat&&!A.fst&&!A.searchTerm){
+  if(!A.fdf&&!A.fdt&&!A.pipe&&!A.fnat&&!A.fst&&!A.search){
     var d6=new Date();d6.setMonth(d6.getMonth()-6);
     defaultFrom=d6.toISOString().split("T")[0];
   }
@@ -6657,12 +6658,12 @@ function bindApp(){
   for(var ni5=0;ni5<nts.length;ni5++)(function(el){el.onclick=function(){for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===el.dataset.op){A.sel=A.processes[i];break;}if(A.sel){A.tab="dados";A.modal="ver";renderModal();}};})(nts[ni5]);
   var siEl=document.getElementById("sI");
   if(siEl){
-    siEl.onkeydown=function(e){if(e.key==="Enter"){A.search=siEl.value;render();}};
+    siEl.onkeydown=function(e){if(e.key==="Enter"){A.search=siEl.value;A.page2=1;render();}};
   }
   var bSearchEl=document.getElementById("bSearch");
-  if(bSearchEl)bSearchEl.onclick=function(){var v=document.getElementById("sI");if(v){A.search=v.value;render();}};
+  if(bSearchEl)bSearchEl.onclick=function(){var v=document.getElementById("sI");if(v){A.search=v.value;A.page2=1;render();}};
   var bClrSearchEl=document.getElementById("bClrSearch");
-  if(bClrSearchEl)bClrSearchEl.onclick=function(){A.search="";render();};
+  if(bClrSearchEl)bClrSearchEl.onclick=function(){A.search="";A.page2=1;render();};
   var fNEl=document.getElementById("fN");if(fNEl)fNEl.onchange=function(e){A.fnat=e.target.value;A.page2=1;render();};
   var fSEl=document.getElementById("fS");if(fSEl)fSEl.onchange=function(e){A.fst=e.target.value;render();};
   var fCorEl=document.getElementById("fCorretor");if(fCorEl)fCorEl.onchange=function(e){A.fCorretor=e.target.value;render();};
