@@ -1235,7 +1235,7 @@ function colP(prefix,list){
 
 // MODAL
 function renderModal(){var ov=document.getElementById("mOv");if(ov)ov.remove();var el=document.createElement("div");el.id="mOv";el.className="modal-overlay no-print";el.innerHTML=gMH();document.body.appendChild(el);bindModal();bindMoneyInputs(el);}
-function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();return "";}
+function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();if(A.modal==="photoEdit")return mPhotoEdit();return "";}
 
 function mNovo(){
   var nat=A.fnat2,groups=glGroups(nat),fields=glFields(nat),no="";
@@ -6626,29 +6626,15 @@ function bindMinhaConta(){
     var file=photoInp.files&&photoInp.files[0];
     if(!file)return;
     if(!file.type.match(/^image\//)){toast('Selecione um arquivo de imagem.','error');return;}
-    var errEl=document.getElementById('mcPhotoErr');
     var reader=new FileReader();
     reader.onload=function(ev){
-      var img=new Image();
-      img.onload=function(){
-        var size=160; // output size
-        var canvas=document.createElement('canvas');
-        canvas.width=size;canvas.height=size;
-        var ctx=canvas.getContext('2d');
-        // Cover-crop center square
-        var srcSize=Math.min(img.width,img.height);
-        var sx=(img.width-srcSize)/2,sy=(img.height-srcSize)/2;
-        ctx.drawImage(img,sx,sy,srcSize,srcSize,0,0,size,size);
-        var dataUrl=canvas.toDataURL('image/jpeg',0.7);
-        ssy(true);
-        db.collection('users').doc(u.id).update({photo:dataUrl}).then(function(){
-          ssy(false);u.photo=dataUrl;toast('Foto atualizada!');render();
-        }).catch(function(e){ssy(false);errEl.innerHTML='<div class="error-msg">'+e.message+'</div>';});
-      };
-      img.src=ev.target.result;
+      A.photoEditSrc=ev.target.result;
+      A.photoEditZoom=1;
+      A.modal='photoEdit';
+      renderModal();
     };
     reader.readAsDataURL(file);
-  };
+  };;
 
   // Remove photo
   var bRmPhoto=document.getElementById('bMCPhotoRemove');
@@ -6706,6 +6692,28 @@ function bindMinhaConta(){
       errEl2.innerHTML='<div class="error-msg">'+e.message+'</div>';
     });
   };
+}
+
+function mPhotoEdit(){
+  return '<div class="modal" style="max-width:420px">'
+    +'<div class="modal-header"><div class="modal-title"><i class="ti ti-crop"></i> Ajustar Foto</div><button class="close-btn" id="cm">x</button></div>'
+    +'<div class="modal-body">'
+    +'<div style="display:flex;flex-direction:column;align-items:center;gap:1rem">'
+    +'<div id="photoCropWrap" style="width:240px;height:240px;border-radius:50%;overflow:hidden;border:3px solid var(--accent);position:relative;cursor:move;background:#000;touch-action:none">'
+    +'<canvas id="photoCanvas" width="240" height="240" style="display:block"></canvas>'
+    +'</div>'
+    +'<div style="width:100%;display:flex;align-items:center;gap:.5rem">'
+    +'<i class="ti ti-zoom-out"></i>'
+    +'<input type="range" id="photoZoom" min="1" max="3" step="0.01" value="'+(A.photoEditZoom||1)+'" style="flex:1">'
+    +'<i class="ti ti-zoom-in"></i>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--muted);text-align:center">Arraste a imagem para posicionar e use o controle para zoom.</div>'
+    +'</div>'
+    +'</div>'
+    +'<div class="modal-footer">'
+    +'<button class="btn btn-secondary" id="cm2">Cancelar</button>'
+    +'<button class="btn btn-primary" id="bSavePhoto"><i class="ti ti-check"></i> Salvar foto</button>'
+    +'</div></div>';
 }
 
 function bindApp(){
@@ -7107,6 +7115,85 @@ function bindModal(){
   var ov=document.getElementById("mOv");if(!ov)return;
   var cls=ov.querySelectorAll("#cm,#cm2");
   for(var ci=0;ci<cls.length;ci++)(function(btn){btn.onclick=function(){A.modal=null;A.etr=null;A.ead=null;A._fPr=null;A._fDa=null;A._fDs=null;A._fMa=null;A._fRe=null;A._fVl=null;A._fPgInfo=null;A._fPago=false;A.fpartes={};A._fImoveis=null;ov.remove();};})(cls[ci]);
+  // ---- PHOTO CROP MODAL ----
+  if(A.modal==="photoEdit"){
+    var pCanvas=ov.querySelector('#photoCanvas');
+    var pZoom=ov.querySelector('#photoZoom');
+    var pWrap=ov.querySelector('#photoCropWrap');
+    if(pCanvas){
+      var pImg=new Image();
+      var pState={offX:0,offY:0,zoom:parseFloat((A.photoEditZoom||1))};
+      var pLoaded=false;
+      pImg.onload=function(){
+        pLoaded=true;
+        // Center initial position
+        var base=Math.max(240/pImg.width,240/pImg.height);
+        pState.base=base;
+        pState.offX=(240-pImg.width*base*pState.zoom)/2;
+        pState.offY=(240-pImg.height*base*pState.zoom)/2;
+        drawP();
+      };
+      pImg.src=A.photoEditSrc;
+      function drawP(){
+        if(!pLoaded)return;
+        var ctx=pCanvas.getContext('2d');
+        ctx.clearRect(0,0,240,240);
+        var scale=pState.base*pState.zoom;
+        ctx.drawImage(pImg,pState.offX,pState.offY,pImg.width*scale,pImg.height*scale);
+      }
+      if(pZoom)pZoom.oninput=function(){
+        var newZoom=parseFloat(pZoom.value);
+        if(pLoaded){
+          var scale=pState.base*pState.zoom;
+          var newScale=pState.base*newZoom;
+          // Keep center point fixed
+          var cx=120-pState.offX,cy=120-pState.offY;
+          var ratio=newScale/scale;
+          pState.offX=120-cx*ratio;
+          pState.offY=120-cy*ratio;
+        }
+        pState.zoom=newZoom;
+        A.photoEditZoom=newZoom;
+        drawP();
+      };
+      // Drag to pan
+      var dragging=false,lastX=0,lastY=0;
+      function startDrag(x,y){dragging=true;lastX=x;lastY=y;}
+      function moveDrag(x,y){
+        if(!dragging)return;
+        pState.offX+=(x-lastX);
+        pState.offY+=(y-lastY);
+        lastX=x;lastY=y;
+        drawP();
+      }
+      function endDrag(){dragging=false;}
+      if(pWrap){
+        pWrap.onmousedown=function(e){startDrag(e.clientX,e.clientY);};
+        window.addEventListener('mousemove',function(e){moveDrag(e.clientX,e.clientY);});
+        window.addEventListener('mouseup',endDrag);
+        pWrap.ontouchstart=function(e){var t=e.touches[0];startDrag(t.clientX,t.clientY);};
+        pWrap.ontouchmove=function(e){var t=e.touches[0];moveDrag(t.clientX,t.clientY);e.preventDefault();};
+        pWrap.ontouchend=endDrag;
+      }
+      var bSaveP=ov.querySelector('#bSavePhoto');
+      if(bSaveP)bSaveP.onclick=function(){
+        var outCanvas=document.createElement('canvas');
+        outCanvas.width=160;outCanvas.height=160;
+        var octx=outCanvas.getContext('2d');
+        var scale=pState.base*pState.zoom;
+        var ratio=160/240;
+        octx.drawImage(pImg,pState.offX*ratio,pState.offY*ratio,pImg.width*scale*ratio,pImg.height*scale*ratio);
+        var dataUrl=outCanvas.toDataURL('image/jpeg',0.75);
+        ssy(true);
+        db.collection('users').doc(A.user.id).update({photo:dataUrl}).then(function(){
+          ssy(false);A.user.photo=dataUrl;A.modal=null;A.photoEditSrc=null;
+          if(ov)ov.remove();
+          toast('Foto atualizada!');render();
+        }).catch(function(e){ssy(false);toast('Erro: '+e.message,'error');});
+      };
+    }
+  }
+
   // Auto-key + badge preview for novoCl
   if(A.modal==="novoCl"){
     var nclNEl2=ov.querySelector('#nclN'),nclKEl2=ov.querySelector('#nclK');
