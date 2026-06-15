@@ -126,9 +126,15 @@ tr:hover td{background:#fafaf8}
 .prog-fill{height:100%;background:var(--green);border-radius:4px;transition:width .4s}
 .comment{padding:.875rem;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);margin-bottom:.75rem;overflow:visible}
 .comment-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;gap:.5rem;flex-wrap:wrap}
-.comment-author{font-size:12px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:6px}
-.comment-date{font-size:11px;color:var(--muted)}
-.comment-text{font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;width:100%}
+.comment{display:flex;gap:.75rem;margin-bottom:1rem;align-items:flex-start}
+.comment.mine{flex-direction:row-reverse}
+.comment-bubble{background:var(--surface2);border-radius:0 12px 12px 12px;padding:.6rem .85rem;max-width:80%;position:relative}
+.comment.mine .comment-bubble{background:var(--accent);color:#fff;border-radius:12px 0 12px 12px}
+.comment-author{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:2px}
+.comment.mine .comment-author{color:rgba(255,255,255,.85)}
+.comment-date{font-size:10px;color:var(--muted);margin-top:4px;text-align:right}
+.comment.mine .comment-date{color:rgba(255,255,255,.6)}
+.comment-text{font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}
 .comment-box{display:flex;gap:.75rem;margin-top:1rem;align-items:flex-end}
 .comment-box textarea{flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13px;resize:none;height:70px}
 .filters{display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center}
@@ -1473,8 +1479,22 @@ function tHist(p){
 function tComm(p){
   var cs=p.comments||[],h='<div>';
   if(cs.length===0)h+='<div class="empty-state" style="padding:1.5rem"><i class="ti ti-message-off"></i>Nenhum comentario.</div>';
-  for(var ci=0;ci<cs.length;ci++){var c=cs[ci];h+='<div class="comment"><div class="comment-header"><div class="comment-author"><div class="user-badge" style="width:24px;height:24px;font-size:10px">'+ini(gun(c.authorId))+'</div>'+ex(gun(c.authorId))+'</div><div class="flex items-center gap-sm"><span class="comment-date">'+fdt(c.createdAt)+'</span>'+(c.authorId===A.user.id?'<button class="btn btn-danger btn-sm" style="padding:3px 8px" data-dc="'+ci+'"><i class="ti ti-trash"></i></button>':"")+'</div></div><div class="comment-text">'+ex(c.text)+'</div></div>';}
-  h+='<div class="comment-box"><textarea id="nCm" placeholder="Comentario... (Ctrl+Enter enviar)"></textarea><button class="btn btn-primary" id="bAC"><i class="ti ti-send"></i></button></div></div>';
+  for(var ci=0;ci<cs.length;ci++){var c=cs[ci];var isMe=c.authorId===A.user.id;
+    var cUser=getUserById(c.authorId)||{};
+    var cName=gun(c.authorId);
+    h+='<div class="comment'+(isMe?' mine':'')+'">';
+    h+=avBadge(cName,cUser.photo,36);
+    h+='<div class="comment-bubble">';
+    if(!isMe)h+='<div class="comment-author">'+ex(cName)+'</div>';
+    h+='<div class="comment-text">'+ex(c.text)+'</div>';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:4px">';
+    h+='<span class="comment-date">'+fdt(c.createdAt)+'</span>';
+    h+=(isMe?'<button class="btn btn-sm" style="padding:1px 5px;font-size:10px;background:rgba(255,255,255,.2);color:#fff;border:none" data-dc="'+ci+'"><i class="ti ti-trash"></i></button>':'');
+    h+='</div></div></div>';}
+  h+='<div class="comment-box">';
+  h+=avBadge(A.user?A.user.name:'',A.user?A.user.photo:null,36);
+  h+='<textarea id="nCm" placeholder="Comentario... (Ctrl+Enter enviar)"></textarea>';
+  h+='<button class="btn btn-primary" id="bAC"><i class="ti ti-send"></i></button></div></div>';
   return h;
 }
 
