@@ -6869,14 +6869,11 @@ function rMensagens(){
   var isSup=A.user&&A.user.role==="supervisor";
   var uid=A.user?A.user.id:"";
 
-  // Only show processes where this user was @mentioned
   var unread=[], read=[];
   for(var i=0;i<A.processes.length;i++){
     var p=A.processes[i];
     if(!p.lastMessage)continue;
-    // Check if user was ever mentioned in this process
     var wasMentioned=(p.mentionedUsers||{})[uid];
-    // Supervisor sees all
     if(!wasMentioned&&!isSup)continue;
     var cnt=(p.unreadBy||{})[uid]||0;
     if(cnt>0) unread.push({p:p,count:cnt});
@@ -6884,21 +6881,15 @@ function rMensagens(){
   }
   unread.sort(function(a,b){return (b.p.lastMessageAt||'')>(a.p.lastMessageAt||'')?1:-1;});
   read.sort(function(a,b){return (b.p.lastMessageAt||'')>(a.p.lastMessageAt||'')?1:-1;});
-  read=read.slice(0,30);
+  read=read.slice(0,50);
 
   var h='<div class="page-header"><div>'
     +'<div class="page-title"><i class="ti ti-message-circle" style="margin-right:.5rem"></i>Mensagens</div>'
-    +'<div class="page-subtitle">'+unread.length+' nao lida(s) • Somente mensagens onde voce foi mencionado</div>'
-    +'</div>'
-    +(isSup&&read.length?'<button class="btn btn-danger btn-sm" id="bDelSelMsgs" style="display:none"><i class="ti ti-trash"></i> Excluir selecionadas</button>':'')
-    +'</div>';
+    +'<div class="page-subtitle">Mencoes com @ • Clique para abrir o protocolo</div>'
+    +'</div></div>';
 
-  function msgCard(uc, isUnread){
+  function msgCard(uc,isUnread){
     var up=uc.p;
-    var byUser=up.lastMessageBy?getUserById(up.lastMessageBy):null;
-    var byName=up.lastMessageBy?gun(up.lastMessageBy):'Alguem';
-
-    // Find the last message that mentioned this user
     var mentionMsg=null;
     if(up.comments){
       for(var ci=up.comments.length-1;ci>=0;ci--){
@@ -6906,129 +6897,109 @@ function rMensagens(){
         if(cm.mentions&&cm.mentions.indexOf(uid)>=0){mentionMsg=cm;break;}
       }
     }
-    var preview=mentionMsg?mentionMsg.text:up.lastMessage||'';
+    var preview=mentionMsg?mentionMsg.text:(up.lastMessage||'');
     preview=(preview||'').substring(0,80)+(preview&&preview.length>80?'...':'');
     var timeStr=mentionMsg?fdt(mentionMsg.createdAt):(up.lastMessageAt?fdt(up.lastMessageAt):'');
-    var msgBy=mentionMsg?gun(mentionMsg.authorId):byName;
+    var msgBy=mentionMsg?gun(mentionMsg.authorId):(up.lastMessageBy?gun(up.lastMessageBy):'');
+    var msgUser=mentionMsg?getUserById(mentionMsg.authorId):getUserById(up.lastMessageBy);
 
-    var s='<div class="card" style="padding:0;overflow:hidden;margin-bottom:.6rem;border-left:4px solid '
+    var s='<div class="card" style="padding:0;overflow:hidden;margin-bottom:.5rem;border-left:4px solid '
       +(isUnread?'#2563eb':'var(--border)')+';cursor:pointer" data-chat-open="'+up.id+'">';
-    s+='<div style="display:flex;gap:.75rem;align-items:center;padding:.6rem .75rem">';
-    if(isSup&&!isUnread)s+='<input type="checkbox" class="msg-del-chk" data-pid="'+up.id+'" style="flex-shrink:0" onclick="event.stopPropagation()">';
-    var msgUser=mentionMsg?getUserById(mentionMsg.authorId):byUser;
-    s+=avBadge(msgBy,msgUser?msgUser.photo:null,40);
+    s+='<div style="display:flex;gap:.75rem;align-items:center;padding:.65rem .75rem">';
+    s+=avBadge(msgBy,msgUser?msgUser.photo:null,38);
     s+='<div style="flex:1;min-width:0">';
     s+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">';
     s+='<span style="font-weight:700;font-size:13px">Protocolo '+ex(up.protocol)+'</span>';
     s+='<span style="font-size:10px;color:var(--muted);white-space:nowrap">'+timeStr+'</span>';
     s+='</div>';
-    s+='<div style="font-size:12px;color:var(--muted);margin-top:1px">';
+    s+='<div style="font-size:12px;margin-top:2px">';
     if(isUnread)s+='<span style="background:#dbeafe;color:#1d4ed8;border-radius:8px;padding:1px 6px;font-size:10px;font-weight:700;margin-right:4px">@ voce</span>';
-    s+='<strong>'+ex(msgBy)+':</strong> '+ex(preview)+'</div>';
-    s+='<div style="font-size:11px;color:var(--muted);margin-top:1px">'+ex(gn(up.natureza||'').label)+'</div>';
+    s+='<strong style="color:var(--text)">'+ex(msgBy)+':</strong> <span style="color:var(--muted)">'+ex(preview)+'</span>';
     s+='</div>';
-    if(isUnread&&uc.count)s+='<div style="background:#2563eb;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">'+uc.count+'</div>';
+    s+='<div style="font-size:11px;color:var(--muted);margin-top:2px">'+ex(gn(up.natureza||'').label)+'</div>';
+    s+='</div>';
+    if(isUnread&&uc.count){
+      s+='<div style="background:#2563eb;color:#fff;border-radius:50%;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;margin-left:4px">'+uc.count+'</div>';
+    }
+    if(!isUnread){
+      s+='<button class="btn btn-secondary btn-sm" data-msg-del="'+up.id+'" title="Excluir notificacao" style="padding:3px 7px;flex-shrink:0;margin-left:6px"><i class="ti ti-trash"></i></button>';
+    }
     s+='</div></div>';
     return s;
   }
 
-  // Unread section
   h+='<div style="font-size:12px;font-weight:700;color:#2563eb;margin-bottom:.5rem;display:flex;align-items:center;gap:6px">'
-    +'<i class="ti ti-at"></i> NAO LIDAS — voce foi mencionado ('+unread.length+')</div>';
+    +'<i class="ti ti-at"></i> NAO LIDAS ('+unread.length+')</div>';
   if(!unread.length){
     h+='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted);margin-bottom:1rem">'
-      +'<i class="ti ti-message-check" style="font-size:28px;display:block;margin-bottom:.5rem"></i>'
-      +'Nenhuma mencao nao lida.</div>';
+      +'<i class="ti ti-message-check" style="font-size:28px;display:block;margin-bottom:.5rem"></i>Nenhuma mencao nao lida.</div>';
   } else {
     for(var i=0;i<unread.length;i++) h+=msgCard(unread[i],true);
   }
 
-  // Read section
-  h+='<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:.5rem;margin-top:1rem;display:flex;align-items:center;gap:6px">'
-    +'<i class="ti ti-check"></i> LIDAS — mencoes anteriores ('+read.length+')'
-    +(isSup&&read.length?'<label style="font-size:11px;font-weight:400;margin-left:.75rem;cursor:pointer"><input type="checkbox" id="chkSelAll" style="margin-right:4px">Selecionar todas</label>':'')
-    +'</div>';
+  h+='<div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:1rem;margin-bottom:.5rem;display:flex;align-items:center;gap:6px">'
+    +'<i class="ti ti-check"></i> LIDAS ('+read.length+') — clique para abrir • 🗑 para excluir</div>';
   if(!read.length){
-    h+='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">Nenhuma mencao anterior.</div>';
+    h+='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">Nenhuma mencao lida ainda.</div>';
   } else {
     for(var i=0;i<read.length;i++) h+=msgCard({p:read[i].p,count:0},false);
   }
-
   return h;
 }
 
 function bindMensagens(){
-  var isSup=A.user&&A.user.role==="supervisor";
   var uid=A.user?A.user.id:"";
 
-  // Open chat on card click
+  // Click card -> open protocol on comentarios tab
   document.querySelectorAll('[data-chat-open]').forEach(function(el){
     el.onclick=function(e){
-      if(e.target.type==="checkbox")return; // don't open if clicking checkbox
+      // If clicked on delete button, don't open
+      if(e.target.closest&&e.target.closest('[data-msg-del]'))return;
+      if(e.target.dataset&&e.target.dataset.msgDel)return;
       var pid=el.dataset.chatOpen;
       for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===pid){A.sel=A.processes[i];break;}
       A.modal="ver";A.tab="comentarios";
       // Mark as read
-      if(A.sel){
-        var ub=A.sel.unreadBy||{};
-        if(ub[uid]){
-          ub[uid]=0;
-          A.sel.unreadBy=ub;
-          var uf={};uf["unreadBy."+uid]=0;
-          db.collection("processes").doc(pid).update(uf);
-          for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===pid){if(A.processes[xi].unreadBy)A.processes[xi].unreadBy[uid]=0;break;}
+      if(A.sel&&(A.sel.unreadBy||{})[uid]){
+        A.sel.unreadBy[uid]=0;
+        var uf={};uf["unreadBy."+uid]=0;
+        db.collection("processes").doc(pid).update(uf);
+        for(var xi=0;xi<A.processes.length;xi++){
+          if(A.processes[xi].id===pid){if(A.processes[xi].unreadBy)A.processes[xi].unreadBy[uid]=0;break;}
         }
       }
       renderModal();
-      setTimeout(function(){var cm=document.getElementById("chatMsgs");if(cm)cm.scrollTop=cm.scrollHeight;},100);
-      render(); // refresh badge
+      render();
+      setTimeout(function(){var cm=document.getElementById("chatMsgs");if(cm)cm.scrollTop=cm.scrollHeight;},120);
     };
   });
 
-  // Select all checkbox (supervisor)
-  var chkAll=document.getElementById("chkSelAll");
-  if(chkAll)chkAll.onchange=function(){
-    document.querySelectorAll(".msg-del-chk").forEach(function(c){c.checked=chkAll.checked;});
-    var bDel=document.getElementById("bDelSelMsgs");
-    if(bDel)bDel.style.display=chkAll.checked?"inline-flex":"none";
-  };
-
-  // Individual checkbox change
-  document.querySelectorAll(".msg-del-chk").forEach(function(chk){
-    chk.onchange=function(){
-      var any=Array.from(document.querySelectorAll(".msg-del-chk")).some(function(c){return c.checked;});
-      var bDel=document.getElementById("bDelSelMsgs");
-      if(bDel)bDel.style.display=any?"inline-flex":"none";
-    };
-  });
-
-  // Delete selected (supervisor)
-  var bDel=document.getElementById("bDelSelMsgs");
-  if(bDel)bDel.onclick=function(){
-    var selected=[];
-    document.querySelectorAll(".msg-del-chk:checked").forEach(function(c){selected.push(c.dataset.pid);});
-    if(!selected.length)return;
-    if(!confirm("Excluir historico de chat de "+selected.length+" protocolo(s)?"))return;
-    ssy(true);
-    var done=0;
-    selected.forEach(function(pid){
-      db.collection("processes").doc(pid).update({
-        comments:[],lastMessage:"",lastMessageAt:"",lastMessageBy:"",unreadBy:{}
-      }).then(function(){
-        done++;
-        for(var i=0;i<A.processes.length;i++){
-          if(A.processes[i].id===pid){
-            A.processes[i].comments=[];
-            A.processes[i].lastMessage="";
-            A.processes[i].lastMessageAt="";
-            A.processes[i].unreadBy={};
+  // Delete read notification - ALL users
+  document.querySelectorAll('[data-msg-del]').forEach(function(btn){
+    btn.onclick=function(e){
+      e.stopPropagation();
+      var pid=btn.dataset.msgDel;
+      if(!confirm("Remover esta notificacao de mencao?"))return;
+      var proc=null;
+      for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===pid){proc=A.processes[i];break;}
+      if(!proc)return;
+      ssy(true);
+      var uf={};uf["mentionedUsers."+uid]=false;
+      db.collection("processes").doc(pid).update(uf).then(function(){
+        ssy(false);
+        if(proc.mentionedUsers)proc.mentionedUsers[uid]=false;
+        for(var xi=0;xi<A.processes.length;xi++){
+          if(A.processes[xi].id===pid){
+            if(!A.processes[xi].mentionedUsers)A.processes[xi].mentionedUsers={};
+            A.processes[xi].mentionedUsers[uid]=false;
             break;
           }
         }
-        if(done===selected.length){ssy(false);toast("Historico excluido!");render();}
-      });
-    });
-  };
+        toast("Notificacao removida.");
+        render();
+      }).catch(function(e){ssy(false);toast("Erro: "+e.message,"error");});
+    };
+  });
 }
 
 function bindApp(){
