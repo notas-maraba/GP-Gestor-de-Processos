@@ -6851,32 +6851,6 @@ function bindChat(p){
   var uname=A.user?A.user.name||A.user.email:"";
   var area=document.getElementById('chatMsgsArea');
   if(area)setTimeout(function(){area.scrollTop=area.scrollHeight;},50);
-  var inp=document.getElementById('chatInput');
-  var mentDiv=document.getElementById('chatMentions');
-  
-  if(inp){
-    inp.addEventListener('input',function(){
-      var val=inp.value,atIdx=val.lastIndexOf('@');
-      if(atIdx>=0&&mentDiv){
-        var q=val.slice(atIdx+1).toLowerCase();
-        var mx=(A.users||[]).filter(function(u){return u.id!==uid&&(u.name||'').toLowerCase().indexOf(q)>=0;});
-        if(mx.length){
-          mentDiv.style.display='block';
-          mentDiv.innerHTML=mx.map(function(u){return '<div data-mention="'+ex(u.name||u.email)+'" style="padding:5px 10px;cursor:pointer;font-size:12px;display:flex;gap:6px;align-items:center">'+avBadge(u.name,u.photo,20)+'<span>'+ex(u.name||u.email)+'</span></div>';}).join('');
-          mentDiv.querySelectorAll('[data-mention]').forEach(function(el){
-            el.onmousedown=function(e){e.preventDefault();inp.value=val.slice(0,atIdx)+'@'+el.dataset.mention+' ';mentDiv.style.display='none';inp.focus();};
-          });
-        } else {mentDiv.style.display='none';}
-      } else if(mentDiv){mentDiv.style.display='none';}
-      inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,100)+'px';
-    });
-    inp.addEventListener('keydown',function(e){
-      if(e.key==='Escape'&&mentDiv)mentDiv.style.display='none';
-      if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}
-    });
-  }
-  var bSend=document.getElementById('bSendChat');
-  if(bSend)bSend.onclick=sendChat;
 }
 
 // =============================================
