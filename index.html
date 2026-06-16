@@ -3169,7 +3169,7 @@ function printOrcamento(cliente,resp,valorImovel,natLabel,notasItens,regItens,su
     +'</div>'
     +'<div class="orc-tags"><div class="tag">TABELA '+new Date().getFullYear()+'</div><div class="tag">ORCAMENTO/ESTIMADO</div><div class="tag">'+hoje+'</div></div>'
     +'</div>'
-    +'<table><tr><td><strong>'+(protocolo?'Protocolo '+ex(protocolo)+' — ':'')+ex(cliente)+'</strong></td></tr>'
+    +'<table><tr><td><strong>CLIENTE:</strong> '+ex(cliente)+(protocolo?' - Protocolo '+ex(protocolo):'')+' </td></tr>'
     +'<tr><td><strong>Responsavel pelo orcamento:</strong> '+ex(resp)+'</td></tr></table>'
     +(valorImovel?(function(){
         var imoveis2=Array.isArray(valorImovel)?valorImovel:[{mat:'',val:valorImovel}];
