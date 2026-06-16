@@ -1357,7 +1357,7 @@ function mVer(){
     var nstyle=ncolors[nx.key]||"background:#e5e7eb;color:#111";
     return '<button class="btn btn-sm" id="bAdv" style="'+nstyle+';border:none"><i class="ti ti-arrow-right"></i> Avancar: '+nx.label+'</button>';
   })():"")
-  +(function(){var prio=A.sel&&A.sel.priority;return '<button class="btn btn-sm" id="bTogPrio" style="'+(prio?'background:#fff7ed;color:#c2410c;border:1px solid #fed7aa':'background:var(--surface2);border:1px solid var(--border);color:var(--muted)')+'">'+(prio?'&#11088; Remover prioridade':'&#11088; Marcar prioridade')+'</button>';})()
+  
   +'<button class="btn btn-secondary btn-sm" id="bPrt"><i class="ti ti-printer"></i></button>'
   +'<button class="close-btn" id="cm">x</button></div></div>'
   +'<div class="modal-body">'+tb
@@ -1375,7 +1375,7 @@ function tDados(p){
   var fields=glFields(p.natureza);
   return '<div class="form-grid">'
   +'<div class="field"><label>Protocolo</label><input id="epPr" type="text" value="'+ex(p.protocol)+'"></div>'
-  +'<div class="field"><label>Natureza</label><input type="text" value="'+ex(gn(p.natureza).label)+'" disabled></div>'
+  +'<div class="field"><label>Natureza</label><select id=\"epNat\">'+A.nats.map(function(n){return '<option value="'+n.key+'"'+(p.natureza===n.key?' selected':'')+'>'+ex(n.label)+'</option>';}).join('')+'</select></div>'
   +'<input type="hidden" id="epMa" value="'+ex(p.matriculas||'')+'">'
   +'<div class="field"><label>Data Abertura</label><input id="epDa" type="date" value="'+(p.dataAbertura||"")+'"></div>'
   +'<div class="field"><label>Data Assinatura *</label><input id="epDs" type="date" value="'+(p.dataAssinatura||"")+'"></div>'
@@ -7696,19 +7696,7 @@ function bindModal(){
       var mb=ov.querySelector(".modal-body");var sc=mb?mb.scrollTop:0;ov.innerHTML=gMH();bindModal();var mb2=ov.querySelector(".modal-body");if(mb2)mb2.scrollTop=sc;toast("Documentos restaurados.");
     });
   };})(restoreSecs[rsi]);
-  // Toggle priority
-  var bTogPrioEl=document.getElementById("bTogPrio");
-  if(bTogPrioEl)bTogPrioEl.onclick=function(){
-    if(A.user.role==="auxiliar"){toast("Apenas Escrevente ou Supervisor pode marcar prioridade.","error");return;}
-    var p=A.sel,newPrio=!p.priority;
-    ssy(true);
-    db.collection("processes").doc(p.id).update({priority:newPrio}).then(function(){
-      ssy(false);p.priority=newPrio;
-      for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
-      ov.innerHTML=gMH();bindModal();
-      toast(newPrio?"Marcado como prioridade! &#11088;":"Prioridade removida.");
-    });
-  };
+
   var bPrtEl=document.getElementById("bPrt");if(bPrtEl)bPrtEl.onclick=function(){A.modal="capa";ov.innerHTML=gMH();bindModal();};
   var bSvUEl=document.getElementById("bSvU");
   if(bSvUEl)bSvUEl.onclick=function(){
