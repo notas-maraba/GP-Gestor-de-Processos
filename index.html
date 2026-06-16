@@ -1283,7 +1283,7 @@ function mNovo(){
   var savedPago=A._fPago||false;
   return '<div class="modal" style="max-width:860px"><div class="modal-header"><div class="modal-title"><i class="ti ti-file-plus"></i> Novo Protocolo</div><button class="close-btn" id="cm">x</button></div>'
   +'<div class="modal-body">'
-  +'<div class="form-grid"><div class="field"><label>Protocolo *</label><input id="fPr" type="text" value="'+ex(savedPr)+'"></div>'
+  +'<div class="form-grid"><div class="field"><label>Protocolo *</label><input id="fPr" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Somente numeros" maxlength="20" value="'+ex(savedPr)+'"></div>'
   +'<div class="field"><label>Natureza *</label><select id="fNa">'+no+'</select></div></div>'
   +partesHtml
   +'<div class="section-label">Dados do Processo</div>'
@@ -7451,6 +7451,20 @@ function bindModal(){
   var ov=document.getElementById("mOv");if(!ov)return;
   var cls=ov.querySelectorAll("#cm,#cm2");
   for(var ci=0;ci<cls.length;ci++)(function(btn){btn.onclick=function(){A.modal=null;A.etr=null;A.ead=null;A._fPr=null;A._fDa=null;A._fDs=null;A._fMa=null;A._fRe=null;A._fVl=null;A._fPgInfo=null;A._fPago=false;A.fpartes={};A._fImoveis=null;ov.remove();};})(cls[ci]);
+  // Protocol field - numbers only
+  var fPrEl=ov.querySelector('#fPr');
+  if(fPrEl){
+    fPrEl.onkeydown=function(e){
+      var allowed=[8,9,37,38,39,40,46,36,35];
+      if(allowed.indexOf(e.keyCode)>=0)return;
+      if((e.ctrlKey||e.metaKey)&&[65,67,86,88].indexOf(e.keyCode)>=0)return;
+      if(e.key&&!/^[0-9]$/.test(e.key)){e.preventDefault();}
+    };
+    fPrEl.oninput=function(){
+      var v=fPrEl.value.replace(/[^0-9]/g,'');
+      if(fPrEl.value!==v)fPrEl.value=v;
+    };
+  }
   // ---- PHOTO CROP MODAL ----
   if(A.modal==="photoEdit"){
     var pCanvas=ov.querySelector('#photoCanvas');
@@ -7630,7 +7644,15 @@ function bindModal(){
 
   var bSvPEl=document.getElementById("bSvP");
   if(bSvPEl)bSvPEl.onclick=function(){
-    var pr=document.getElementById("fPr").value.trim(),na=document.getElementById("fNa").value,da=document.getElementById("fDa").value;
+    var pr=document.getElementById("fPr").value.trim().replace(/[^0-9]/g,""),na=document.getElementById("fNa").value,da=document.getElementById("fDa").value;
+    // Validate: numbers only
+    if(!pr){document.getElementById("nErr").innerHTML='<div class="error-msg">Informe o numero do protocolo.</div>';return;}
+    if(!/^[0-9]+$/.test(pr)){document.getElementById("nErr").innerHTML='<div class="error-msg">&#128683; Protocolo deve conter apenas numeros.</div>';return;}
+    // Check for duplicate - compare as integers to ignore leading zeros
+    var prNum=parseInt(pr,10);
+    var dup=false;
+    for(var di=0;di<A.processes.length;di++){if(parseInt(A.processes[di].protocol||"0",10)===prNum){dup=true;break;}}
+    if(dup){document.getElementById("nErr").innerHTML='<div class="error-msg">&#128683; Protocolo '+pr+' ja existe no sistema. Verifique se nao foi cadastrado antes.</div>';return;}
     var groups=glGroups(na),partes={},hasFirst=false;
     for(var gi=0;gi<groups.length;gi++){
       var gp=colP("fp"+gi,A.fpartes[gi]||[]);
