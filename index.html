@@ -1328,7 +1328,7 @@ function mVer(){
   +'<div class="tab'+(A.tab==="checklist"?" active":"")+'" data-tab="checklist"><i class="ti ti-checklist"></i> Docs ('+pg.pct+'%)</div>'
   +'<div class="tab'+(A.tab==="historico"?" active":"")+'" data-tab="historico"><i class="ti ti-history"></i> Historico</div>'
   +'<div class="tab'+(A.tab==="comentarios"?" active":"")+'" data-tab="comentarios"><i class="ti ti-message"></i> Comentarios ('+(p.comments||[]).length+')</div>'
-  +'<div class="tab'+(A.tab==="chat"?" active":"")+' " data-tab="chat"><i class="ti ti-brand-hipchat"></i> Chat'+((p.chatMsgs||[]).filter(function(m){var u=A.user?A.user.id:"";return (m.unreadBy||[]).indexOf(u)>=0;}).length>0?'<span class="notif-badge" style="background:#dc2626;margin-left:4px">'+(p.chatMsgs||[]).filter(function(m){var u=A.user?A.user.id:"";return (m.unreadBy||[]).indexOf(u)>=0;}).length+'</span>':'')+'</div>'
+  +'<div class="tab'
   +'<div class="tab'+(A.tab==="orcamento_proc"?" active":"")+'" data-tab="orcamento_proc"><i class="ti ti-receipt"></i> Orcamento</div>'
   +(function(){var vc='<div class="tab'+(A.tab==="vinculados"?' active':'')+' " data-tab="vinculados"><i class="ti ti-link"></i> Vinculados'+(p.vinculados&&p.vinculados.length?' ('+p.vinculados.length+')':'')+'</div>';return vc;}())
   +'</div>';
@@ -1381,9 +1381,7 @@ function mVer(){
   +(A.tab==="partes"?tPartes(p):"")
   +(A.tab==="checklist"?tCl(p,cl):"")
   +(A.tab==="historico"?tHist(p):"")
-  +(A.tab==="comentarios"?tComm(p):"")
-  +(A.tab==="chat"?tChat(p):"")
-  +(A.tab==="orcamento_proc"?tOrcamentoProc(p):"")
+  +(A.tab==="comentarios"?tComm(p):"")  +(A.tab==="orcamento_proc"?tOrcamentoProc(p):"")
   +(A.tab==="vinculados"?'<div style="padding:.5rem 0">'+rVinculados(p)+'</div>':"")
   +'</div></div>';
 }
@@ -6846,48 +6844,7 @@ function mPhotoEdit(){
     +'</div></div>';
 }
 
-function tChat(p){
-  var msgs=p.chatMsgs||[];
-  var uid=A.user?A.user.id:"";
-  var uname=A.user?A.user.name||A.user.email:"";
-  // Mark as read
-  var dirty=false;
-  msgs.forEach(function(m){var i=(m.unreadBy||[]).indexOf(uid);if(i>=0){m.unreadBy.splice(i,1);dirty=true;}});
-  if(dirty){
-    db.collection("processes").doc(p.id).update({chatMsgs:msgs}).catch(function(){});
-    p.chatMsgs=msgs;
-    for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i].chatMsgs=msgs;break;}
-  }
-  var isMe,mUser,mName,txt;
-  var h='<div style="display:flex;flex-direction:column;height:420px">';
-  h+='<div id="chatMsgsArea" style="flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.75rem;background:var(--surface2);border-radius:var(--r);margin-bottom:.75rem">';
-  if(!msgs.length){
-    h+='<div style="text-align:center;color:var(--muted);padding:2rem">'
-      +'<i class="ti ti-brand-hipchat" style="font-size:40px;display:block;margin-bottom:.5rem;opacity:.3"></i>'
-      +'Nenhuma mensagem ainda. Inicie a conversa!</div>';
-  } else {
-    for(var mi=0;mi<msgs.length;mi++){
-      var m=msgs[mi];
-      isMe=m.authorId===uid;
-      mUser=getUserById(m.authorId)||{};
-      mName=m.authorName||gun(m.authorId)||'Usuario';
-      txt=ex(m.text||'').replace(/@([\w\s]+)/g,'<strong style="color:'+(isMe?'#dbeafe':'var(--accent)')+'">@$1</strong>');
-      h+='<div style="display:flex;gap:.5rem;align-items:flex-end;'+(isMe?'flex-direction:row-reverse':'')+'">'+avBadge(mName,mUser.photo,32);
-      h+='<div style="max-width:75%">';
-      if(!isMe)h+='<div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:2px;margin-left:4px">'+ex(mName)+'</div>';
-      h+='<div style="padding:.5rem .75rem;border-radius:'+(isMe?'12px 2px 12px 12px':'2px 12px 12px 12px')+';background:'+(isMe?'var(--accent)':'var(--surface)')+';color:'+(isMe?'#fff':'var(--text)')+';font-size:13px">'+txt+'</div>';
-      h+='<div style="font-size:10px;color:var(--muted);margin-top:2px;text-align:'+(isMe?'right':'left')+';padding:0 4px">'+fdt(m.createdAt||'')+'</div>';
-      h+='</div></div>';
-    }
-  }
-  h+='</div>';
-  h+='<div id="chatMentions" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);max-height:100px;overflow-y:auto;margin-bottom:4px"></div>';
-  h+='<div style="display:flex;gap:.5rem;align-items:flex-end">'+avBadge(uname,A.user?A.user.photo:null,32);
-  h+='<div style="flex:1"><textarea id="chatInput" placeholder="Mensagem... @nome para mencionar" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;resize:none;min-height:40px;max-height:100px;background:var(--surface);color:var(--text);font-family:var(--font)"></textarea></div>';
-  h+='<button class="btn btn-primary" id="bSendChat" style="height:40px;padding:0 14px"><i class="ti ti-send"></i></button>';
-  h+='</div></div>';
-  return h;
-}
+
 
 function bindChat(p){
   var uid=A.user?A.user.id:"";
@@ -6896,35 +6853,7 @@ function bindChat(p){
   if(area)setTimeout(function(){area.scrollTop=area.scrollHeight;},50);
   var inp=document.getElementById('chatInput');
   var mentDiv=document.getElementById('chatMentions');
-  function sendChat(){
-    var text=inp?inp.value.trim():'';
-    if(!text)return;
-    var mentioned=[];
-    var re=/@([\w\s]+)/g,mm;
-    while((mm=re.exec(text))!==null){
-      var nm=mm[1].trim();
-      (A.users||[]).forEach(function(u){if((u.name||'').toLowerCase()===nm.toLowerCase()&&u.id!==uid&&mentioned.indexOf(u.id)<0)mentioned.push(u.id);});
-    }
-    var unreadBy=(A.users||[]).map(function(u){return u.id;}).filter(function(id){return id!==uid;});
-    var msg={id:Date.now()+'_'+uid,authorId:uid,authorName:uname,text:text,createdAt:new Date().toISOString(),unreadBy:unreadBy,mentions:mentioned};
-    var msgs=(p.chatMsgs||[]).concat([msg]);
-    p.chatMsgs=msgs;
-    for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i].chatMsgs=msgs;break;}
-    if(inp){inp.value='';inp.style.height='auto';}
-    if(mentDiv)mentDiv.style.display='none';
-    // Optimistic UI
-    if(area){
-      var b=document.createElement('div');
-      b.style.cssText='display:flex;gap:.5rem;align-items:flex-end;flex-direction:row-reverse';
-      b.innerHTML=avBadge(uname,A.user?A.user.photo:null,32)
-        +'<div style="max-width:75%"><div style="padding:.5rem .75rem;border-radius:12px 2px 12px 12px;background:var(--accent);color:#fff;font-size:13px">'+ex(text)+'</div>'
-        +'<div style="font-size:10px;color:var(--muted);margin-top:2px;text-align:right;padding:0 4px">agora</div></div>';
-      area.appendChild(b);
-      area.scrollTop=area.scrollHeight;
-    }
-    db.collection('processes').doc(p.id).update({chatMsgs:msgs,lastChatMsg:{text:text.substring(0,60),authorName:uname,at:new Date().toISOString()}})
-      .catch(function(e){toast('Erro ao enviar: '+e.message,'error');});
-  }
+  
   if(inp){
     inp.addEventListener('input',function(){
       var val=inp.value,atIdx=val.lastIndexOf('@');
@@ -6953,77 +6882,154 @@ function bindChat(p){
 // =============================================
 // MENSAGENS (CHAT NOTIFICATIONS)
 // =============================================
+
+
 function rMensagens(){
-  var unreadChats=[];
+  var isSup=A.user&&A.user.role==="supervisor";
+  var uid=A.user?A.user.id:"";
+
+  // Build unread and read lists from processes
+  var unread=[], read=[];
   for(var i=0;i<A.processes.length;i++){
     var p=A.processes[i];
-    var cnt=(p.unreadBy||{})[A.user.id]||0;
-    if(cnt>0)unreadChats.push({p:p,count:cnt});
+    var cnt=(p.unreadBy||{})[uid]||0;
+    if(!p.lastMessage)continue;
+    if(cnt>0) unread.push({p:p,count:cnt});
+    else read.push({p:p});
   }
-  unreadChats.sort(function(a,b){return (b.p.lastMessageAt||'')>(a.p.lastMessageAt||'')?1:-1;});
+  unread.sort(function(a,b){return (b.p.lastMessageAt||'')>(a.p.lastMessageAt||'')?1:-1;});
+  read.sort(function(a,b){return (b.p.lastMessageAt||'')>(a.p.lastMessageAt||'')?1:-1;});
+  read=read.slice(0,30); // last 30 read conversations
 
   var h='<div class="page-header"><div>'
     +'<div class="page-title"><i class="ti ti-message-circle" style="margin-right:.5rem"></i>Mensagens</div>'
-    +'<div class="page-subtitle">'+unreadChats.length+' conversa(s) com mensagem nao lida</div>'
-    +'</div></div>';
+    +'<div class="page-subtitle">'+unread.length+' nao lida(s)</div>'
+    +'</div>'
+    +(isSup&&read.length?'<button class="btn btn-danger btn-sm" id="bDelSelMsgs" style="display:none"><i class="ti ti-trash"></i> Excluir selecionadas</button>':'')
+    +'</div>';
 
-  if(!unreadChats.length){
-    h+='<div class="card" style="text-align:center;padding:3rem;color:var(--muted)">'
-      +'<i class="ti ti-message-check" style="font-size:48px;display:block;margin-bottom:1rem"></i>'
-      +'<div style="font-size:15px">Tudo em dia! Nenhuma mensagem nao lida.</div>'
-      +'</div>';
-    return h;
-  }
-
-  h+='<div style="display:flex;flex-direction:column;gap:.75rem">';
-  for(var i=0;i<unreadChats.length;i++){
-    var uc=unreadChats[i];
+  function msgCard(uc, isUnread){
     var up=uc.p;
     var byUser=up.lastMessageBy?getUserById(up.lastMessageBy):null;
     var byName=up.lastMessageBy?gun(up.lastMessageBy):'Alguem';
-    var msgPreview=(up.lastMessage||'').substring(0,80)+(up.lastMessage&&up.lastMessage.length>80?'...':'');
-    var timeAgo=up.lastMessageAt?fdt(up.lastMessageAt):'';
-
-    h+='<div class="card" style="padding:0;overflow:hidden;cursor:pointer;border:2px solid #2563eb" data-chat-open="'+up.id+'">';
-    h+='<div style="display:flex;gap:.75rem;align-items:center;padding:.75rem">';
-    // Avatar of sender
-    h+=avBadge(byName,byUser?byUser.photo:null,44);
-    h+='<div style="flex:1;min-width:0">';
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">';
-    h+='<div style="font-weight:700;font-size:14px">Protocolo '+ex(up.protocol||'')+'</div>';
-    h+='<span style="font-size:11px;color:var(--muted);white-space:nowrap">'+timeAgo+'</span>';
-    h+='</div>';
-    h+='<div style="font-size:12px;color:var(--muted);margin-top:2px">'
-      +'<strong>'+ex(byName)+':</strong> '+ex(msgPreview)
-      +'</div>';
-    h+='<div style="font-size:11px;color:var(--muted);margin-top:3px">'+ex(gn(up.natureza||'').label)+'</div>';
-    h+='</div>';
-    // Unread badge
-    h+='<div style="background:#2563eb;color:#fff;border-radius:50%;min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">'+uc.count+'</div>';
-    h+='</div></div>';
+    var preview=(up.lastMessage||'').substring(0,80)+(up.lastMessage&&up.lastMessage.length>80?'...':'');
+    var timeStr=up.lastMessageAt?fdt(up.lastMessageAt):'';
+    var natLabel=gn(up.natureza||'').label||'';
+    var s='<div class="card" style="padding:0;overflow:hidden;margin-bottom:.6rem;border-left:4px solid '+(isUnread?'#2563eb':'var(--border)')+';cursor:pointer" data-chat-open="'+up.id+'">';
+    s+='<div style="display:flex;gap:.75rem;align-items:center;padding:.6rem .75rem">';
+    if(isSup&&!isUnread)s+='<input type="checkbox" class="msg-del-chk" data-pid="'+up.id+'" style="flex-shrink:0" onclick="event.stopPropagation()">';
+    s+=avBadge(byName,byUser?byUser.photo:null,40);
+    s+='<div style="flex:1;min-width:0">';
+    s+='<div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">';
+    s+='<span style="font-weight:700;font-size:13px">Protocolo '+ex(up.protocol)+'</span>';
+    s+='<span style="font-size:10px;color:var(--muted);white-space:nowrap">'+timeStr+'</span>';
+    s+='</div>';
+    s+='<div style="font-size:12px;color:var(--muted);margin-top:1px"><strong>'+ex(byName)+':</strong> '+ex(preview)+'</div>';
+    s+='<div style="font-size:11px;color:var(--muted);margin-top:1px">'+ex(natLabel)+'</div>';
+    s+='</div>';
+    if(isUnread&&uc.count)s+='<div style="background:#2563eb;color:#fff;border-radius:50%;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">'+uc.count+'</div>';
+    s+='</div></div>';
+    return s;
   }
-  h+='</div>';
+
+  // Unread section
+  h+='<div style="font-size:13px;font-weight:700;color:#2563eb;margin-bottom:.5rem;margin-top:.25rem">'
+    +'<i class="ti ti-circle-filled" style="font-size:10px"></i> NAO LIDAS ('+unread.length+')</div>';
+  if(!unread.length){
+    h+='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted);margin-bottom:1rem">'
+      +'<i class="ti ti-message-check" style="font-size:28px;display:block;margin-bottom:.5rem"></i>'
+      +'Nenhuma mensagem nao lida.</div>';
+  } else {
+    for(var i=0;i<unread.length;i++) h+=msgCard(unread[i],true);
+  }
+
+  // Read section
+  h+='<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:.5rem;margin-top:1rem">'
+    +'<i class="ti ti-check" style="font-size:10px"></i> LIDAS ('+read.length+')'
+    +(isSup&&read.length?'<label style="font-size:11px;font-weight:400;margin-left:.75rem;cursor:pointer"><input type="checkbox" id="chkSelAll" style="margin-right:4px">Selecionar todas</label>':'')
+    +'</div>';
+  if(!read.length){
+    h+='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted)">'
+      +'Nenhuma conversa anterior.</div>';
+  } else {
+    for(var i=0;i<read.length;i++) h+=msgCard({p:read[i].p,count:0},false);
+  }
+
   return h;
 }
 
 function bindMensagens(){
+  var isSup=A.user&&A.user.role==="supervisor";
+  var uid=A.user?A.user.id:"";
+
+  // Open chat on card click
   document.querySelectorAll('[data-chat-open]').forEach(function(el){
-    el.onclick=function(){
+    el.onclick=function(e){
+      if(e.target.type==="checkbox")return; // don't open if clicking checkbox
       var pid=el.dataset.chatOpen;
       for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===pid){A.sel=A.processes[i];break;}
-      A.modal='ver';A.tab='comentarios';
-      renderModal();
+      A.modal="ver";A.tab="comentarios";
       // Mark as read
-      if(A.sel&&A.sel.unreadBy&&A.sel.unreadBy[A.user.id]){
-        A.sel.unreadBy[A.user.id]=0;
-        var uf={};uf['unreadBy.'+A.user.id]=0;
-        db.collection('processes').doc(pid).update(uf);
-        for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===pid){if(A.processes[xi].unreadBy)A.processes[xi].unreadBy[A.user.id]=0;break;}
-        render();
+      if(A.sel){
+        var ub=A.sel.unreadBy||{};
+        if(ub[uid]){
+          ub[uid]=0;
+          A.sel.unreadBy=ub;
+          var uf={};uf["unreadBy."+uid]=0;
+          db.collection("processes").doc(pid).update(uf);
+          for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===pid){if(A.processes[xi].unreadBy)A.processes[xi].unreadBy[uid]=0;break;}
+        }
       }
-      setTimeout(function(){var cm=document.getElementById('chatMsgs');if(cm)cm.scrollTop=cm.scrollHeight;},100);
+      renderModal();
+      setTimeout(function(){var cm=document.getElementById("chatMsgs");if(cm)cm.scrollTop=cm.scrollHeight;},100);
+      render(); // refresh badge
     };
   });
+
+  // Select all checkbox (supervisor)
+  var chkAll=document.getElementById("chkSelAll");
+  if(chkAll)chkAll.onchange=function(){
+    document.querySelectorAll(".msg-del-chk").forEach(function(c){c.checked=chkAll.checked;});
+    var bDel=document.getElementById("bDelSelMsgs");
+    if(bDel)bDel.style.display=chkAll.checked?"inline-flex":"none";
+  };
+
+  // Individual checkbox change
+  document.querySelectorAll(".msg-del-chk").forEach(function(chk){
+    chk.onchange=function(){
+      var any=Array.from(document.querySelectorAll(".msg-del-chk")).some(function(c){return c.checked;});
+      var bDel=document.getElementById("bDelSelMsgs");
+      if(bDel)bDel.style.display=any?"inline-flex":"none";
+    };
+  });
+
+  // Delete selected (supervisor)
+  var bDel=document.getElementById("bDelSelMsgs");
+  if(bDel)bDel.onclick=function(){
+    var selected=[];
+    document.querySelectorAll(".msg-del-chk:checked").forEach(function(c){selected.push(c.dataset.pid);});
+    if(!selected.length)return;
+    if(!confirm("Excluir historico de chat de "+selected.length+" protocolo(s)?"))return;
+    ssy(true);
+    var done=0;
+    selected.forEach(function(pid){
+      db.collection("processes").doc(pid).update({
+        comments:[],lastMessage:"",lastMessageAt:"",lastMessageBy:"",unreadBy:{}
+      }).then(function(){
+        done++;
+        for(var i=0;i<A.processes.length;i++){
+          if(A.processes[i].id===pid){
+            A.processes[i].comments=[];
+            A.processes[i].lastMessage="";
+            A.processes[i].lastMessageAt="";
+            A.processes[i].unreadBy={};
+            break;
+          }
+        }
+        if(done===selected.length){ssy(false);toast("Historico excluido!");render();}
+      });
+    });
+  };
 }
 
 function bindApp(){
@@ -7094,7 +7100,6 @@ function bindApp(){
       var pid=btn.dataset.chat;
       for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===pid){A.sel=A.processes[i];break;}
       A.modal='ver';A.tab='comentarios';
-      renderModal();
       if(A.sel&&A.sel.unreadBy&&A.sel.unreadBy[A.user.id]){
         A.sel.unreadBy[A.user.id]=0;
         var unreadField={};
@@ -7102,6 +7107,8 @@ function bindApp(){
         db.collection('processes').doc(pid).update(unreadField);
         for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===pid){if(A.processes[xi].unreadBy)A.processes[xi].unreadBy[A.user.id]=0;break;}
       }
+      renderModal();
+      render();
       setTimeout(function(){var cm=document.getElementById('chatMsgs');if(cm)cm.scrollTop=cm.scrollHeight;},100);
     };
   })(chatBtns[chi2]);
@@ -8106,9 +8113,7 @@ function bindModal(){
   })(remEpIms[rei]);
   // Tab-specific bindings
   if(A.modal==="ver"&&A.sel){
-    if(A.tab==="vinculados")bindVinculados(A.sel);
-    if(A.tab==="chat"){bindChat(A.sel);}
-    if(A.tab==="orcamento_proc")bindOrcamentoProc(A.sel);
+    if(A.tab==="vinculados")bindVinculados(A.sel);    if(A.tab==="orcamento_proc")bindOrcamentoProc(A.sel);
   }
 }
 
