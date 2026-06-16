@@ -3121,7 +3121,7 @@ function bindOrcPreview(){
   };
 }
 
-function printOrcamento(cliente,resp,valorImovel,natLabel,notasItens,regItens,subtN,subtR,entrada){
+function printOrcamento(cliente,resp,valorImovel,natLabel,notasItens,regItens,subtN,subtR,entrada,protocolo){
   entrada=entrada||0;
   var saldo=(subtN+subtR)-entrada;
   var hoje=new Date().toLocaleDateString("pt-BR");
@@ -3169,7 +3169,7 @@ function printOrcamento(cliente,resp,valorImovel,natLabel,notasItens,regItens,su
     +'</div>'
     +'<div class="orc-tags"><div class="tag">TABELA '+new Date().getFullYear()+'</div><div class="tag">ORCAMENTO/ESTIMADO</div><div class="tag">'+hoje+'</div></div>'
     +'</div>'
-    +'<table><tr><td><strong>CLIENTE:</strong> '+ex(cliente)+'</td></tr>'
+    +'<table><tr><td><strong>'+(protocolo?'Protocolo '+ex(protocolo)+' — ':'')+ex(cliente)+'</strong></td></tr>'
     +'<tr><td><strong>Responsavel pelo orcamento:</strong> '+ex(resp)+'</td></tr></table>'
     +(valorImovel?(function(){
         var imoveis2=Array.isArray(valorImovel)?valorImovel:[{mat:'',val:valorImovel}];
@@ -5077,7 +5077,7 @@ function bindOrcamentoProc(p){
     var ent=orcP.entrada||0;
     var imoveis=p.imoveis||(p.valor?[p.valor]:[]);
     var natLabel=gn(p.natureza).label;
-    return printOrcamento(cliente,A.user?A.user.name:'',imoveis,natLabel,notasItens,regItens,subtN,subtR,ent);
+    return printOrcamento(cliente,A.user?A.user.name:'',imoveis,natLabel,notasItens,regItens,subtN,subtR,ent,p.protocol);
   }
 
   var bPrint=document.getElementById('bPrintOrcProc');
