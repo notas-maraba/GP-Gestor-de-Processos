@@ -3121,7 +3121,7 @@ function bindOrcPreview(){
   };
 }
 
-function printOrcamento(cliente,resp,valorImovel,natLabel,notasItens,regItens,subtN,subtR,entrada,protocolo){
+function printOrcamento(cliente,resp,valorImovel,natLabel,notasItens,regItens,subtN,subtR,entrada,protocolo,obs){
   entrada=entrada||0;
   var saldo=(subtN+subtR)-entrada;
   var hoje=new Date().toLocaleDateString("pt-BR");
@@ -3204,6 +3204,17 @@ function printOrcamento(cliente,resp,valorImovel,natLabel,notasItens,regItens,su
     +'PIX: CNPJ:31.251.048/0001-04<br>'
     +'<strong>CARTORIO DO 1 OFICIO DE REGISTRO DE IMOVEIS DA COMARCA DE MARABA</strong>'
     +'</div>'
+    +(obs?'<div style="border:2px solid #1a3a5c;border-radius:4px;padding:10px;margin-top:10px;page-break-inside:avoid">'
+      +'<div style="font-size:11px;font-weight:700;color:#1a3a5c;border-bottom:1px solid #1a3a5c;padding-bottom:5px;margin-bottom:8px;text-transform:uppercase"><i>Observacoes:</i></div>'
+      +(function(){
+        var lines=obs.split('\n');
+        var lh='';
+        for(var li=0;li<lines.length;li++){
+          if(lines[li].trim())lh+='<div style="font-size:11px;padding:2px 0;display:flex;gap:6px"><span style="color:#1a3a5c;font-weight:700">•</span><span>'+ex(lines[li])+'</span></div>';
+        }
+        return lh;
+      })()
+      +'</div>':'')
     +(function(){
       var respNome=resp||'';
       var hoje=new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
@@ -4915,6 +4926,16 @@ function tOrcamentoProc(p){
     +(entrada>0?'<span style="font-size:11px;opacity:.8;margin-left:10px">(Total: '+fmtBRL(total)+' | Entrada: '+fmtBRL(entrada)+')</span>':'')
     +'</div>';
 
+  // Observacoes
+  var savedObs=orcP.obs||'';
+  h+='<div style="margin-top:.75rem;border-top:1px dashed var(--border);padding-top:.75rem">';
+  h+='<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">';
+  h+='<input type="checkbox" id="opObsCheck"'+(savedObs?' checked':'')+'>';
+  h+='<label for="opObsCheck" style="font-size:12px;font-weight:700;color:var(--accent);cursor:pointer"><i class="ti ti-notes"></i> Incluir quadro de Observacoes na impressao</label>';
+  h+='</div>';
+  h+='<textarea id="opObs" placeholder="Digite as observacoes em lista (uma por linha)..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;resize:vertical;min-height:70px;display:'+(savedObs?'block':'none')+'">'+ex(savedObs)+'</textarea>';
+  h+='</div>';
+
   // Buttons
   h+='<div style="display:flex;gap:.5rem;margin-top:.75rem" id="opBtnBar">'
     +'<button class="btn btn-primary btn-sm" id="bSvOrcProc"><i class="ti ti-device-floppy"></i> Salvar Orcamento</button>'
@@ -4930,6 +4951,14 @@ function bindOrcamentoProc(p){
   var orcP=p.orcamentoProc;
   var notasItens=orcP.notasItens||[];
   var regItens=orcP.regItens||[];
+
+  // Toggle obs textarea
+  var obsCheck=document.getElementById('opObsCheck');
+  var obsTa=document.getElementById('opObs');
+  if(obsCheck&&obsTa)obsCheck.onchange=function(){
+    obsTa.style.display=obsCheck.checked?'block':'none';
+    if(obsCheck.checked)obsTa.focus();
+  };
 
   // Toggle custom cliente field
   var cSelEl=document.getElementById('orcProcCliente');
@@ -5052,6 +5081,12 @@ function bindOrcamentoProc(p){
     orcP.notasItens=notasItens;
     orcP.regItens=regItens;
     orcP.entrada=parseFloat(document.getElementById('opEntrada')?document.getElementById('opEntrada').value:0)||0;
+    // Save obs
+    var obsChk2=document.getElementById('opObsCheck');
+    var obsTa2=document.getElementById('opObs');
+    if(obsChk2&&obsTa2)orcP.obs=obsChk2.checked?obsTa2.value.trim():'';
+    else if(obsTa2)orcP.obs=obsTa2.value.trim();
+
     // Save cliente
     var cSel2=document.getElementById('orcProcCliente');
     var cCus2=document.getElementById('orcProcClienteCustom');
@@ -5077,7 +5112,10 @@ function bindOrcamentoProc(p){
     var ent=orcP.entrada||0;
     var imoveis=p.imoveis||(p.valor?[p.valor]:[]);
     var natLabel=gn(p.natureza).label;
-    return printOrcamento(cliente,A.user?A.user.name:'',imoveis,natLabel,notasItens,regItens,subtN,subtR,ent,p.protocol);
+    var obsChkP=document.getElementById('opObsCheck');
+    var obsTaP=document.getElementById('opObs');
+    var obsVal=obsChkP&&obsChkP.checked&&obsTaP?obsTaP.value.trim():(orcP.obs||'');
+    return printOrcamento(cliente,A.user?A.user.name:'',imoveis,natLabel,notasItens,regItens,subtN,subtR,ent,p.protocol,obsVal);
   }
 
   var bPrint=document.getElementById('bPrintOrcProc');
