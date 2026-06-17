@@ -2365,7 +2365,7 @@ function recalcTabela(atos){
 }
 
 function getAtoByCode(cod, tabela){
-  for(var i=0;i<tabela.length;i++)if(tabela[i].cod===cod)return tabela[i];
+  for(var i=0;i<tabela.length;i++)if(String(tabela[i].cod)===String(cod))return tabela[i];
   return null;
 }
 
@@ -3071,7 +3071,7 @@ function bindOrcPreview(){
     var sel=document.getElementById("selNotasAv");
     var qtd=parseInt(document.getElementById("qtdNotasAv").value)||1;
     if(!sel.value)return;
-    var av=getAtoByCode(parseInt(sel.value),TABELA_NOTAS);
+    var av=getAtoByCode(sel.value,TABELA_NOTAS);
     if(!av)return;
     notasItens.push({cod:av.cod,qtd:qtd,desc:av.desc,emolBase:av.emol,issqnBase:av.issqn,seloBase:av.selo,val:av.total,acrescimo:0,removivel:true});
     renderOrcPreview(notasItens,regItens);
@@ -5094,7 +5094,7 @@ function bindOrcamentoProc(p){
     var sel=document.getElementById('selOpNotasAv');
     var qtd=parseInt(document.getElementById('qtdOpNotasAv').value)||1;
     if(!sel||!sel.value)return;
-    var av=getAtoByCode(parseInt(sel.value),TABELA_NOTAS);
+    var av=getAtoByCode(sel.value,TABELA_NOTAS);
     if(!av)return;
     notasItens.push({cod:av.cod,qtd:qtd,desc:av.desc,emolBase:av.emol,issqnBase:av.issqn,seloBase:av.selo,val:av.total,acrescimo:0,removivel:true});
     rerender();
@@ -5106,7 +5106,7 @@ function bindOrcamentoProc(p){
     var sel=document.getElementById('selOpRegAv');
     var qtd=parseInt(document.getElementById('qtdOpRegAv').value)||1;
     if(!sel||!sel.value)return;
-    var av=getAtoByCode(parseInt(sel.value),TABELA_REG);
+    var av=getAtoByCode(sel.value,TABELA_REG);
     if(!av)return;
     regItens.push({cod:av.cod,qtd:qtd,desc:av.desc,emolBase:av.emol,issqnBase:av.issqn,seloBase:av.selo,val:av.total,acrescimo:0,removivel:true});
     rerender();
