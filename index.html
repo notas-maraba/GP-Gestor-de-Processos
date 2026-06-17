@@ -1924,6 +1924,10 @@ function rPrio(){
         +'<button class="btn btn-info btn-sm" data-rs="'+fp.id+'" title="Resumo rapido"><i class="ti ti-eye"></i></button>'
         +'<button class="btn btn-secondary btn-sm" data-op="'+fp.id+'" title="Abrir"><i class="ti ti-folder-open"></i></button>'
         +'<button class="btn btn-secondary btn-sm" data-pr="'+fp.id+'" title="Capa / Imprimir"><i class="ti ti-printer"></i></button>'
+        +'<button class="btn btn-primary btn-sm" data-chat="'+fp.id+'" title="Abrir chat/comentarios" style="position:relative">'
+        +'<i class="ti ti-message-circle"></i>'
+        +((fp.unreadBy&&fp.unreadBy[A.user.id]&&fp.unreadBy[A.user.id]>0)?'<span style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">'+fp.unreadBy[A.user.id]+'</span>':'')
+        +'</button>'
         +(isSup?'<button class="btn btn-danger btn-sm" data-unprio="'+fp.id+'" title="Remover prioridade" style="padding:5px 8px"><i class="ti ti-star-off"></i></button>':'')
         +'</div></td>'
         +'</tr>';
@@ -6953,51 +6957,71 @@ function bindMensagens(){
   // Click card -> open protocol on comentarios tab
   document.querySelectorAll('[data-chat-open]').forEach(function(el){
     el.onclick=function(e){
-      // If clicked on delete button, don't open
-      if(e.target.closest&&e.target.closest('[data-msg-del]'))return;
-      if(e.target.dataset&&e.target.dataset.msgDel)return;
+      // Prevent opening if trash button was clicked
+      var delBtn=e.target.closest?e.target.closest('[data-msg-del]'):null;
+      if(!delBtn&&e.target.dataset&&e.target.dataset.msgDel)delBtn=e.target;
+      if(delBtn)return;
       var pid=el.dataset.chatOpen;
-      for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===pid){A.sel=A.processes[i];break;}
+      var proc=null;
+      for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===pid){proc=A.processes[i];A.sel=proc;break;}
       A.modal="ver";A.tab="comentarios";
       // Mark as read
-      if(A.sel&&(A.sel.unreadBy||{})[uid]){
-        A.sel.unreadBy[uid]=0;
+      if(proc&&(proc.unreadBy||{})[uid]){
+        proc.unreadBy[uid]=0;
         var uf={};uf["unreadBy."+uid]=0;
         db.collection("processes").doc(pid).update(uf);
         for(var xi=0;xi<A.processes.length;xi++){
-          if(A.processes[xi].id===pid){if(A.processes[xi].unreadBy)A.processes[xi].unreadBy[uid]=0;break;}
+          if(A.processes[xi].id===pid){
+            if(!A.processes[xi].unreadBy)A.processes[xi].unreadBy={};
+            A.processes[xi].unreadBy[uid]=0;
+            break;
+          }
         }
       }
       renderModal();
       render();
-      setTimeout(function(){var cm=document.getElementById("chatMsgs");if(cm)cm.scrollTop=cm.scrollHeight;},120);
+      setTimeout(function(){var cm=document.getElementById("chatMsgs");if(cm)cm.scrollTop=cm.scrollHeight;},150);
     };
   });
 
   // Delete read notification - ALL users
+  // Only removes from user's notification list, NOT the actual comments
   document.querySelectorAll('[data-msg-del]').forEach(function(btn){
     btn.onclick=function(e){
       e.stopPropagation();
+      e.preventDefault();
       var pid=btn.dataset.msgDel;
-      if(!confirm("Remover esta notificacao de mencao?"))return;
+      if(!confirm("Remover esta notificacao?\n(Os comentarios do protocolo nao serao apagados)"))return;
       var proc=null;
       for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===pid){proc=A.processes[i];break;}
-      if(!proc)return;
+      if(!proc){toast("Processo nao encontrado.","error");return;}
       ssy(true);
-      var uf={};uf["mentionedUsers."+uid]=false;
-      db.collection("processes").doc(pid).update(uf).then(function(){
+      // Set mentionedUsers[uid]=false so user stops seeing this notification
+      var upd={};
+      upd["mentionedUsers."+uid]=false;
+      upd["unreadBy."+uid]=0;
+      db.collection("processes").doc(pid).update(upd).then(function(){
         ssy(false);
-        if(proc.mentionedUsers)proc.mentionedUsers[uid]=false;
+        // Update local state
+        if(!proc.mentionedUsers)proc.mentionedUsers={};
+        proc.mentionedUsers[uid]=false;
+        if(!proc.unreadBy)proc.unreadBy={};
+        proc.unreadBy[uid]=0;
         for(var xi=0;xi<A.processes.length;xi++){
           if(A.processes[xi].id===pid){
             if(!A.processes[xi].mentionedUsers)A.processes[xi].mentionedUsers={};
             A.processes[xi].mentionedUsers[uid]=false;
+            if(!A.processes[xi].unreadBy)A.processes[xi].unreadBy={};
+            A.processes[xi].unreadBy[uid]=0;
             break;
           }
         }
-        toast("Notificacao removida.");
+        toast("Notificacao removida com sucesso!");
         render();
-      }).catch(function(e){ssy(false);toast("Erro: "+e.message,"error");});
+      }).catch(function(err){
+        ssy(false);
+        toast("Erro ao remover: "+err.message,"error");
+      });
     };
   });
 }
