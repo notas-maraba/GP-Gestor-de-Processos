@@ -2345,6 +2345,8 @@ function loadTabelaEmolumentos(){
     if(s.exists){
       if(s.data().notas&&s.data().notas.length)TABELA_NOTAS=s.data().notas;
       if(s.data().registro&&s.data().registro.length)TABELA_REG=s.data().registro;
+      // Re-render if tabela page is open so custom atos appear
+      if(A.page==="tabela_emolumentos")render();
     } else {
       // First time: save defaults to Firebase
       db.collection("config").doc("tabela_emolumentos").set({
@@ -3083,7 +3085,7 @@ function bindOrcPreview(){
     var sel=document.getElementById("selRegAv");
     var qtd=parseInt(document.getElementById("qtdRegAv").value)||1;
     if(!sel.value)return;
-    var rav=getAtoByCode(parseInt(sel.value),TABELA_REG);
+    var rav=getAtoByCode(sel.value,TABELA_REG);
     if(!rav)return;
     regItens.push({cod:rav.cod,qtd:qtd,desc:rav.desc,emolBase:rav.emol,issqnBase:rav.issqn,seloBase:rav.selo,val:rav.total,acrescimo:0,removivel:true});
     renderOrcPreview(notasItens,regItens);
@@ -4005,7 +4007,7 @@ function bindOrcRapidos(){
     var sv=document.getElementById("selRapNotasAv");
     var qv=parseInt(document.getElementById("qtdRapNotasAv").value)||1;
     if(!sv||!sv.value)return;
-    var av=getAtoByCode(parseInt(sv.value),TABELA_NOTAS);
+    var av=getAtoByCode(sv.value,TABELA_NOTAS);
     if(!av)return;
     if(!sel.avulsosNotas)sel.avulsosNotas=[];
     sel.avulsosNotas.push({cod:av.cod,qtd:qv,desc:av.desc,emolBase:av.emol,issqnBase:av.issqn,seloBase:av.selo,val:av.total,acrescimo:0});
@@ -4018,7 +4020,7 @@ function bindOrcRapidos(){
     var sv=document.getElementById("selRapRegAv");
     var qv=parseInt(document.getElementById("qtdRapRegAv").value)||1;
     if(!sv||!sv.value)return;
-    var av=getAtoByCode(parseInt(sv.value),TABELA_REG);
+    var av=getAtoByCode(sv.value,TABELA_REG);
     if(!av)return;
     if(!sel.avulsosReg)sel.avulsosReg=[];
     sel.avulsosReg.push({cod:av.cod,qtd:qv,desc:av.desc,emolBase:av.emol,issqnBase:av.issqn,seloBase:av.selo,val:av.total,acrescimo:0});
