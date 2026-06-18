@@ -7344,39 +7344,7 @@ function bindApp(){
     if(bNA)bNA.onclick=function(){
       A.modal="novoAto";A.novoAtoTab=A.tabelaTab||"notas";renderModal();
     };
-    // Confirm new ato
-    var bConfNA=document.getElementById("bConfNovoAto");
-    if(bConfNA)bConfNA.onclick=function(){
-      var cod=document.getElementById("natoCode").value.trim();
-      var desc=document.getElementById("natoDesc").value.trim();
-      var emol=parseFloat((document.getElementById("natoEmol").value||"0").replace(/\./g,"").replace(",","."))||0;
-      var selo=parseFloat((document.getElementById("natoSelo").value||"0").replace(/\./g,"").replace(",","."))||0;
-      var errEl=document.getElementById("natoErr");
-      if(!cod){errEl.innerHTML="<div class=\"error-msg\">Informe o codigo.</div>";return;}
-      if(!desc){errEl.innerHTML="<div class=\"error-msg\">Informe a descricao.</div>";return;}
-      if(!emol){errEl.innerHTML="<div class=\"error-msg\">Informe o valor dos emolumentos.</div>";return;}
-      var issqn=Math.round(emol*0.05*100)/100;
-      var total=Math.round((emol+selo+issqn)*100)/100;
-      var newAto={cod:cod,desc:desc,emol:emol,selo:selo,issqn:issqn,total:total,custom:true};
-      var tab=A.novoAtoTab||"notas";
-      if(tab==="notas") TABELA_NOTAS.push(newAto);
-      else TABELA_REG.push(newAto);
-      ssy(true);
-      db.collection("config").doc("tabela_emolumentos").set({
-        notas:TABELA_NOTAS,registro:TABELA_REG,
-        ano:2026,updatedAt:new Date().toISOString(),updatedBy:A.user.id
-      }).then(function(){
-        ssy(false);
-        if(document.getElementById("mOv"))document.getElementById("mOv").remove();
-        A.modal=null;
-        toast("Ato \""+desc+"\" adicionado e salvo!");
-        render();
-      }).catch(function(err){
-        ssy(false);
-        var el=document.getElementById("natoErr");
-        if(el)el.innerHTML="<div class=\"error-msg\">Erro ao salvar: "+err.message+"</div>";
-      });
-    };
+    // (bConfNovoAto bound in bindModal)
 
     // Delete custom ato
     document.querySelectorAll("[data-del-ato]").forEach(function(btn){
@@ -7579,6 +7547,41 @@ function bindModal(){
   var ov=document.getElementById("mOv");if(!ov)return;
   var cls=ov.querySelectorAll("#cm,#cm2");
   for(var ci=0;ci<cls.length;ci++)(function(btn){btn.onclick=function(){A.modal=null;A.etr=null;A.ead=null;A._fPr=null;A._fDa=null;A._fDs=null;A._fMa=null;A._fRe=null;A._fVl=null;A._fPgInfo=null;A._fPago=false;A.fpartes={};A._fImoveis=null;ov.remove();};})(cls[ci]);
+  // Novo Ato modal
+  if(A.modal==="novoAto"){
+    var bConfNA=ov.querySelector("#bConfNovoAto");
+    if(bConfNA)bConfNA.onclick=function(){
+      var cod=(ov.querySelector("#natoCode")||{}).value||"";
+      var desc=(ov.querySelector("#natoDesc")||{}).value||"";
+      var emolRaw=(ov.querySelector("#natoEmol")||{}).value||"0";
+      var seloRaw=(ov.querySelector("#natoSelo")||{}).value||"0";
+      cod=cod.trim();desc=desc.trim();
+      var emol=parseFloat(emolRaw.replace(/\./g,"").replace(",","."))||0;
+      var selo=parseFloat(seloRaw.replace(/\./g,"").replace(",","."))||0;
+      var errEl=ov.querySelector("#natoErr");
+      if(!cod){if(errEl)errEl.innerHTML='<div class="error-msg">Informe o codigo.</div>';return;}
+      if(!desc){if(errEl)errEl.innerHTML='<div class="error-msg">Informe a descricao.</div>';return;}
+      if(!emol){if(errEl)errEl.innerHTML='<div class="error-msg">Informe o valor dos emolumentos.</div>';return;}
+      var issqn=Math.round(emol*0.05*100)/100;
+      var total=Math.round((emol+selo+issqn)*100)/100;
+      var newAto={cod:cod,desc:desc,emol:emol,selo:selo,issqn:issqn,total:total,custom:true};
+      var tab=A.novoAtoTab||"notas";
+      if(tab==="notas")TABELA_NOTAS.push(newAto);
+      else TABELA_REG.push(newAto);
+      ssy(true);
+      db.collection("config").doc("tabela_emolumentos").set({
+        notas:TABELA_NOTAS,registro:TABELA_REG,
+        ano:2026,updatedAt:new Date().toISOString(),updatedBy:A.user.id
+      }).then(function(){
+        ssy(false);A.modal=null;ov.remove();
+        toast("Ato \""+desc+"\" adicionado e salvo!");
+        render();
+      }).catch(function(err){
+        ssy(false);
+        if(errEl)errEl.innerHTML='<div class="error-msg">Erro ao salvar: '+err.message+'</div>';
+      });
+    };
+  }
   // Copy natureza confirm
   if(A.modal==="copyCl"){
     var bConfCpy=document.getElementById("bConfCopyCl");
