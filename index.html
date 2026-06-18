@@ -617,9 +617,11 @@ function loadCL(){
       console.log("Documento nao existe - criando com padroes");
       db.collection("config").doc("checklists").set({data:A.checklists,nats:A.nats});
     }
+    loadTabelaEmolumentos();
     subP();
   }).catch(function(e){
     console.error("Erro ao carregar checklists:",e);
+    loadTabelaEmolumentos();
     subP();
   });
 }
