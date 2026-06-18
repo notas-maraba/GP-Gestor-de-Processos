@@ -2342,21 +2342,20 @@ var TABELA_NOTAS = JSON.parse(JSON.stringify(TABELA_NOTAS_DEFAULT));
 var TABELA_REG = JSON.parse(JSON.stringify(TABELA_REG_DEFAULT));
 
 function loadTabelaEmolumentos(){
-  db.collection("config").doc("tabela_emolumentos").get().then(function(s){
+  db.collection("config").doc("tabela_emolumentos").onSnapshot(function(s){
     if(s.exists){
-      if(s.data().notas&&s.data().notas.length)TABELA_NOTAS=s.data().notas;
-      if(s.data().registro&&s.data().registro.length)TABELA_REG=s.data().registro;
-      // Re-render if tabela page is open so custom atos appear
+      var d=s.data();
+      if(d.notas&&d.notas.length)TABELA_NOTAS=d.notas;
+      if(d.registro&&d.registro.length)TABELA_REG=d.registro;
       if(A.page==="tabela_emolumentos")render();
     } else {
-      // First time: save defaults to Firebase
       db.collection("config").doc("tabela_emolumentos").set({
         notas:TABELA_NOTAS_DEFAULT,
         registro:TABELA_REG_DEFAULT,
         ano:2026
       });
     }
-  }).catch(function(){});
+  },function(){});
 }
 
 function recalcTabela(atos){
@@ -7043,9 +7042,9 @@ function mNovoAto(){
     +'<div class="field col-span-2"><label>Descricao *</label>'
     +'<input type="text" id="natoDesc" placeholder="Ex: Reconhecimento de Firma"></div>'
     +'<div class="field"><label>Emolumentos (R$) *</label>'
-    +'<input type="text" id="natoEmol" placeholder="0,00" class="money-input"></div>'
+    +'<input type="text" id="natoEmol" placeholder="Ex: 150.00" type="text"></div>'
     +'<div class="field"><label>Selo (R$)</label>'
-    +'<input type="text" id="natoSelo" placeholder="0,00" class="money-input"></div>'
+    +'<input type="text" id="natoSelo" placeholder="Ex: 14.25" type="text"></div>'
     +'</div>'
     +'<div style="background:var(--surface2);border-radius:var(--r);padding:.6rem .75rem;margin-top:.5rem;font-size:12px;color:var(--muted)">'
     +'<i class="ti ti-info-circle"></i> ISSQN (5%) e Total serao calculados automaticamente ao salvar.'
