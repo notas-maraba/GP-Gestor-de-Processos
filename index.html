@@ -1135,7 +1135,8 @@ function rCL(){
     h+='<div class="card"><div class="card-header"><div><div class="card-title">'+ex(cl.name)+'</div>'
     +'<div class="text-xs text-muted">'+cl.sections.length+' secoes - '+tot+' itens | <span class="badge '+nat.badge+'" style="font-size:10px;padding:2px 7px">'+nat.label+'</span></div></div>'
     +'<div class="flex gap-sm">'
-    +'<button class="btn btn-secondary btn-sm" data-ecl="'+k+'"><i class="ti ti-edit"></i></button>'
+    +'<button class="btn btn-secondary btn-sm" data-ecl="'+k+'" title="Editar"><i class="ti ti-edit"></i></button>'
+    +'<button class="btn btn-secondary btn-sm" data-copycl="'+k+'" title="Copiar natureza"><i class="ti ti-copy"></i></button>'
     +(!isDefault?'<button class="btn btn-danger btn-sm" data-delnat="'+k+'"><i class="ti ti-trash"></i></button>':"")
     +'</div></div>';
     for(var si5=0;si5<cl.sections.length;si5++)h+='<div class="text-xs mb-sm"><strong>'+ex(cl.sections[si5].title)+'</strong> <span class="text-muted">- '+cl.sections[si5].items.length+' item(ns)</span></div>';
@@ -1264,7 +1265,7 @@ function colP(prefix,list){
 
 // MODAL
 function renderModal(){var ov=document.getElementById("mOv");if(ov)ov.remove();var el=document.createElement("div");el.id="mOv";el.className="modal-overlay no-print";el.innerHTML=gMH();document.body.appendChild(el);bindModal();bindMoneyInputs(el);}
-function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();if(A.modal==="photoEdit")return mPhotoEdit();return "";}
+function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();if(A.modal==="photoEdit")return mPhotoEdit();if(A.modal==="novoAto")return mNovoAto();if(A.modal==="copyCl")return mCopyCl();return "";}
 
 function mNovo(){
   var nat=A.fnat2,groups=glGroups(nat),fields=glFields(nat),no="";
@@ -1515,7 +1516,7 @@ function tComm(p){
     var cUser=getUserById(c.authorId)||{};
     var cName=gun(c.authorId)||'Usuario';
     h+='<div style="display:flex;gap:8px;align-items:flex-end;'+(isMe?'flex-direction:row-reverse':'')+'">'+avBadge(cName,cUser.photo,32);
-    h+='<div style="max-width:72%"><div style="font-size:13px;padding:8px 12px;border-radius:'+(isMe?'14px 4px 14px 14px':'4px 14px 14px 14px')+';background:'+(isMe?'var(--accent)':'var(--surface2)')+';color:'+(isMe?'#fff':'var(--text)')+';line-height:1.5;word-break:break-word">';
+    h+='<div style="max-width:72%"><div style="font-size:13px;padding:8px 12px;border-radius:'+(isMe?'14px 4px 14px 14px':'4px 14px 14px 14px')+';background:'+(isMe?'var(--accent)':'var(--surface2)')+';color:'+(isMe?'#fff':'var(--text)')+';line-height:1.5;word-break:break-word;white-space:pre-wrap">';
     if(!isMe)h=''+h+'<div style="font-size:11px;font-weight:700;margin-bottom:3px">'+ex(cName)+'</div>';
     h+=ex(c.text).replace(/<strong/g,'<strong').replace(/@(\w+)/g,'@$1')+'</div>';
     h+='<div style="display:flex;align-items:center;gap:4px;margin-top:3px;'+(isMe?'justify-content:flex-end':'')+'">'
@@ -7030,6 +7031,62 @@ function bindMensagens(){
   });
 }
 
+function mNovoAto(){
+  var tab=A.novoAtoTab||"notas";
+  return '<div class="modal" style="max-width:480px">'
+    +'<div class="modal-header"><div class="modal-title"><i class="ti ti-plus"></i> Novo Ato — '+(tab==="notas"?"Tabelionato de Notas":"Registro de Imoveis")+'</div>'
+    +'<button class="close-btn" id="cm">x</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="form-grid">'
+    +'<div class="field"><label>Codigo do Ato *</label>'
+    +'<input type="text" id="natoCode" placeholder="Ex: 999" maxlength="20"></div>'
+    +'<div class="field col-span-2"><label>Descricao *</label>'
+    +'<input type="text" id="natoDesc" placeholder="Ex: Reconhecimento de Firma"></div>'
+    +'<div class="field"><label>Emolumentos (R$) *</label>'
+    +'<input type="text" id="natoEmol" placeholder="0,00" class="money-input"></div>'
+    +'<div class="field"><label>Selo (R$)</label>'
+    +'<input type="text" id="natoSelo" placeholder="0,00" class="money-input"></div>'
+    +'</div>'
+    +'<div style="background:var(--surface2);border-radius:var(--r);padding:.6rem .75rem;margin-top:.5rem;font-size:12px;color:var(--muted)">'
+    +'<i class="ti ti-info-circle"></i> ISSQN (5%) e Total serao calculados automaticamente ao salvar.'
+    +'</div>'
+    +'<div id="natoErr" style="margin-top:.5rem"></div>'
+    +'</div>'
+    +'<div class="modal-footer">'
+    +'<button class="btn btn-secondary" id="cm2">Cancelar</button>'
+    +'<button class="btn btn-primary" id="bConfNovoAto"><i class="ti ti-device-floppy"></i> Salvar Ato</button>'
+    +'</div></div>';
+}
+
+function mCopyCl(){
+  var srcKey=A.copyNatSrc||"";
+  var srcNat=A.nats.filter(function(n){return n.key===srcKey;})[0]||{};
+  var srcChecklist=A.checklists[srcKey]||[];
+  return '<div class="modal" style="max-width:520px">'
+    +'<div class="modal-header"><div class="modal-title"><i class="ti ti-copy"></i> Copiar Natureza</div>'
+    +'<button class="close-btn" id="cm">x</button></div>'
+    +'<div class="modal-body">'
+    +'<div style="background:var(--surface2);border-radius:var(--r);padding:.6rem .75rem;margin-bottom:.75rem;font-size:13px">'
+    +'<strong>Origem:</strong> '+ex(srcNat.label||srcKey)
+    +' <span style="font-size:11px;color:var(--muted)">('+srcChecklist.length+' itens no checklist)</span>'
+    +'</div>'
+    +'<div class="form-grid">'
+    +'<div class="field col-span-2"><label>Nome da nova natureza *</label>'
+    +'<input type="text" id="cpNatNome" placeholder="Ex: Escritura de Doacao" value="'+ex(srcNat.label||'')+'"></div>'
+    +'<div class="field col-span-2"><label>Chave (codigo interno) *</label>'
+    +'<input type="text" id="cpNatKey" placeholder="Ex: doacao_imovel" style="font-family:var(--mono)"></div>'
+    +'</div>'
+    +'<div style="background:var(--surface2);border-radius:var(--r);padding:.6rem .75rem;margin-top:.5rem;font-size:12px;color:var(--muted)">'
+    +'<i class="ti ti-info-circle"></i> Sera criada uma copia com o mesmo checklist. Voce pode editar depois.'
+    +'</div>'
+    +'<div id="cpNatErr" style="margin-top:.5rem"></div>'
+    +'</div>'
+    +'<div class="modal-footer">'
+    +'<button class="btn btn-secondary" id="cm2">Cancelar</button>'
+    +'<button class="btn btn-primary" id="bConfCopyCl"><i class="ti ti-copy"></i> Criar Copia</button>'
+    +'</div></div>';
+}
+
 function bindApp(){
   var bThemeEl=document.getElementById('bTheme');
   if(bThemeEl)bThemeEl.onclick=toggleTheme;
@@ -7073,6 +7130,20 @@ function bindApp(){
   var editUserBtns=document.querySelectorAll("[data-edituser]");
   for(var eui=0;eui<editUserBtns.length;eui++)(function(btn){btn.onclick=function(){if(A.user.role!=="supervisor"){toast("Apenas supervisor pode editar usuarios.","error");return;}A.editingUserId=btn.dataset.edituser;A.modal="editUser";renderModal();};})(editUserBtns[eui]);
   var bNCLEl=document.getElementById("bNCL");if(bNCLEl)bNCLEl.onclick=function(){if(A.user&&A.user.role==="supervisor"){A.modal="novoCl";renderModal();}};
+  // Copy natureza (supervisor only)
+  var copyNatBtns=document.querySelectorAll('[data-copycl]');
+  for(var cpni=0;cpni<copyNatBtns.length;cpni++)(function(btn){
+    btn.onclick=function(){
+      if(!(A.user&&A.user.role==="supervisor"))return;
+      var srcKey=btn.dataset.copycl;
+      var srcNat=A.nats.filter(function(n){return n.key===srcKey;})[0];
+      if(!srcNat)return;
+      A.copyNatSrc=srcKey;
+      A.modal="copyCl";
+      renderModal();
+    };
+  })(copyNatBtns[cpni]);
+
   // Delete natureza (supervisor only)
   var delNatBtns=document.querySelectorAll('[data-delnat]');
   for(var dni=0;dni<delNatBtns.length;dni++)(function(btn){
@@ -7271,28 +7342,40 @@ function bindApp(){
     // Novo Ato handler
     var bNA=document.getElementById("bNovoAto");
     if(bNA)bNA.onclick=function(){
-      var tab=A.tabelaTab||"notas";
-      var cod=prompt("Codigo do Ato (ex: 999):");
-      if(!cod)return;
-      var desc=prompt("Descricao do Ato:");
-      if(!desc)return;
-      var emolStr=prompt("Valor dos Emolumentos (ex: 150.00):");
-      if(!emolStr)return;
-      var seloStr=prompt("Valor do Selo (ex: 14.25):");
-      if(seloStr===null)return;
-      var emol=parseFloat(emolStr.replace(",","."))||0;
-      var selo=parseFloat(seloStr.replace(",","."))||0;
+      A.modal="novoAto";A.novoAtoTab=A.tabelaTab||"notas";renderModal();
+    };
+    // Confirm new ato
+    var bConfNA=document.getElementById("bConfNovoAto");
+    if(bConfNA)bConfNA.onclick=function(){
+      var cod=document.getElementById("natoCode").value.trim();
+      var desc=document.getElementById("natoDesc").value.trim();
+      var emol=parseFloat((document.getElementById("natoEmol").value||"0").replace(/\./g,"").replace(",","."))||0;
+      var selo=parseFloat((document.getElementById("natoSelo").value||"0").replace(/\./g,"").replace(",","."))||0;
+      var errEl=document.getElementById("natoErr");
+      if(!cod){errEl.innerHTML="<div class=\"error-msg\">Informe o codigo.</div>";return;}
+      if(!desc){errEl.innerHTML="<div class=\"error-msg\">Informe a descricao.</div>";return;}
+      if(!emol){errEl.innerHTML="<div class=\"error-msg\">Informe o valor dos emolumentos.</div>";return;}
       var issqn=Math.round(emol*0.05*100)/100;
       var total=Math.round((emol+selo+issqn)*100)/100;
       var newAto={cod:cod,desc:desc,emol:emol,selo:selo,issqn:issqn,total:total,custom:true};
+      var tab=A.novoAtoTab||"notas";
       if(tab==="notas") TABELA_NOTAS.push(newAto);
       else TABELA_REG.push(newAto);
-      // Auto-save
       ssy(true);
       db.collection("config").doc("tabela_emolumentos").set({
         notas:TABELA_NOTAS,registro:TABELA_REG,
         ano:2026,updatedAt:new Date().toISOString(),updatedBy:A.user.id
-      }).then(function(){ssy(false);toast("Ato \""+desc+"\" adicionado!");render();});
+      }).then(function(){
+        ssy(false);
+        if(document.getElementById("mOv"))document.getElementById("mOv").remove();
+        A.modal=null;
+        toast("Ato \""+desc+"\" adicionado e salvo!");
+        render();
+      }).catch(function(err){
+        ssy(false);
+        var el=document.getElementById("natoErr");
+        if(el)el.innerHTML="<div class=\"error-msg\">Erro ao salvar: "+err.message+"</div>";
+      });
     };
 
     // Delete custom ato
@@ -7496,6 +7579,33 @@ function bindModal(){
   var ov=document.getElementById("mOv");if(!ov)return;
   var cls=ov.querySelectorAll("#cm,#cm2");
   for(var ci=0;ci<cls.length;ci++)(function(btn){btn.onclick=function(){A.modal=null;A.etr=null;A.ead=null;A._fPr=null;A._fDa=null;A._fDs=null;A._fMa=null;A._fRe=null;A._fVl=null;A._fPgInfo=null;A._fPago=false;A.fpartes={};A._fImoveis=null;ov.remove();};})(cls[ci]);
+  // Copy natureza confirm
+  if(A.modal==="copyCl"){
+    var bConfCpy=document.getElementById("bConfCopyCl");
+    if(bConfCpy)bConfCpy.onclick=function(){
+      var nome=document.getElementById("cpNatNome").value.trim();
+      var rawKey=document.getElementById("cpNatKey").value.trim();
+      var key=rawKey.replace(/[^a-z0-9_]/gi,"_").toLowerCase();
+      var errEl=document.getElementById("cpNatErr");
+      if(!nome){errEl.innerHTML='<div class="error-msg">Informe o nome.</div>';return;}
+      if(!key){errEl.innerHTML='<div class="error-msg">Informe a chave.</div>';return;}
+      var exists=A.nats.filter(function(n){return n.key===key;}).length>0;
+      if(exists){errEl.innerHTML='<div class="error-msg">Ja existe uma natureza com essa chave.</div>';return;}
+      var srcKey=A.copyNatSrc||"";
+      var srcNat=A.nats.filter(function(n){return n.key===srcKey;})[0]||{};
+      var newNat=JSON.parse(JSON.stringify(srcNat));
+      newNat.key=key;newNat.label=nome;
+      var newChecklist=JSON.parse(JSON.stringify(A.checklists[srcKey]||[]));
+      A.nats.push(newNat);
+      A.checklists[key]=newChecklist;
+      ssy(true);
+      db.collection("config").doc("checklists").update({data:A.checklists,nats:A.nats})
+        .then(function(){
+          ssy(false);A.modal=null;A.copyNatSrc=null;ov.remove();
+          toast("Natureza \""+nome+"\" criada com sucesso!");render();
+        }).catch(function(e){ssy(false);errEl.innerHTML='<div class="error-msg">Erro: '+e.message+'</div>';});
+    };
+  }
   // Protocol field - numbers only
   var fPrEl=ov.querySelector('#fPr');
   if(fPrEl){
