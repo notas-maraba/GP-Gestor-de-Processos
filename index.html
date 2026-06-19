@@ -666,6 +666,12 @@ function subP(){
 function render(){
   var app=document.getElementById("app");if(!app)return;
   if(!A.user){app.innerHTML=lgHTML();bindLg();return;}
+  // Ensure TABELA_NOTAS/TABELA_REG reflect the ACTIVE year on any page other than the tabela management page itself
+  if(A.tabelasEmol&&A.anoAtivo&&A.page!=="tabela_emol"){
+    var ativaData=A.tabelasEmol[A.anoAtivo];
+    if(ativaData){TABELA_NOTAS=ativaData.notas||[];TABELA_REG=ativaData.registro||[];}
+    A.anoView=A.anoAtivo;
+  }
   // Preserve search field value across renders
   var siEl=document.getElementById("sI");
   if(siEl&&siEl.value&&!A.search)A.search=siEl.value;
@@ -2343,18 +2349,51 @@ var TABELA_REG_DEFAULT = [
 var TABELA_NOTAS = JSON.parse(JSON.stringify(TABELA_NOTAS_DEFAULT));
 var TABELA_REG = JSON.parse(JSON.stringify(TABELA_REG_DEFAULT));
 
+function saveTabelaEmolumentos(callback,errCallback){
+  // Save into the year currently being VIEWED/EDITED (not necessarily the active one)
+  var ano=A.anoView||A.anoAtivo||"2026";
+  if(!A.tabelasEmol)A.tabelasEmol={};
+  if(!A.tabelasEmol[ano])A.tabelasEmol[ano]={ativa:false,criadaEm:new Date().toISOString(),criadaPor:A.user?A.user.id:""};
+  A.tabelasEmol[ano].notas=TABELA_NOTAS;
+  A.tabelasEmol[ano].registro=TABELA_REG;
+  A.tabelasEmol[ano].atualizadaEm=new Date().toISOString();
+  A.tabelasEmol[ano].atualizadaPor=A.user?A.user.id:"";
+  db.collection("config").doc("tabelas_emolumentos").set({tabelas:A.tabelasEmol}).then(function(){
+    if(callback)callback();
+  }).catch(function(err){
+    if(errCallback)errCallback(err);
+  });
+}
+
 function loadTabelaEmolumentos(){
-  db.collection("config").doc("tabela_emolumentos").onSnapshot(function(s){
-    if(s.exists){
-      var d=s.data();
-      if(d.notas&&d.notas.length)TABELA_NOTAS=d.notas;
-      if(d.registro&&d.registro.length)TABELA_REG=d.registro;
-      if(A.page==="tabela_emolumentos")render();
+  db.collection("config").doc("tabelas_emolumentos").onSnapshot(function(s){
+    if(s.exists&&s.data().tabelas&&Object.keys(s.data().tabelas).length){
+      A.tabelasEmol=s.data().tabelas;
+      var anoAtivo=null;
+      Object.keys(A.tabelasEmol).forEach(function(ano){
+        if(A.tabelasEmol[ano].ativa)anoAtivo=ano;
+      });
+      if(!anoAtivo){
+        // No active table - activate the most recent one
+        var anos=Object.keys(A.tabelasEmol).sort();
+        anoAtivo=anos[anos.length-1];
+        A.tabelasEmol[anoAtivo].ativa=true;
+      }
+      A.anoAtivo=anoAtivo;
+      TABELA_NOTAS=A.tabelasEmol[anoAtivo].notas||[];
+      TABELA_REG=A.tabelasEmol[anoAtivo].registro||[];
+      if(A.page==="tabela_emol")render();
     } else {
-      db.collection("config").doc("tabela_emolumentos").set({
-        notas:TABELA_NOTAS_DEFAULT,
-        registro:TABELA_REG_DEFAULT,
-        ano:2026
+      // Migrate from old single-table doc, or create default
+      db.collection("config").doc("tabela_emolumentos").get().then(function(old){
+        var notasIni=TABELA_NOTAS_DEFAULT,regIni=TABELA_REG_DEFAULT;
+        if(old.exists){
+          if(old.data().notas&&old.data().notas.length)notasIni=old.data().notas;
+          if(old.data().registro&&old.data().registro.length)regIni=old.data().registro;
+        }
+        var tabelas={};
+        tabelas["2026"]={notas:notasIni,registro:regIni,ativa:true,criadaEm:new Date().toISOString(),criadaPor:A.user?A.user.id:""};
+        db.collection("config").doc("tabelas_emolumentos").set({tabelas:tabelas});
       });
     }
   },function(){});
@@ -2398,12 +2437,56 @@ function findByValueNew(tabela, valor){
 // =============================================
 function rTabelaEmolumentos(){
   var tab=A.tabelaTab||"notas";
+  var isSup=A.user&&A.user.role==="supervisor";
+  var tabelasEmol=A.tabelasEmol||{};
+  var anos=Object.keys(tabelasEmol).sort();
+  var anoAtivo=A.anoAtivo||"2026";
+  var anoView=A.anoView||anoAtivo;
+  // Sync globals to the VIEWED year so existing edit/dup/delete code keeps working
+  if(tabelasEmol[anoView]){
+    TABELA_NOTAS=tabelasEmol[anoView].notas||[];
+    TABELA_REG=tabelasEmol[anoView].registro||[];
+  }
   var tabData=tab==="notas"?TABELA_NOTAS:TABELA_REG;
+
   var h='<div class="page-header"><div><div class="page-title"><i class="ti ti-table" style="margin-right:.5rem"></i>Tabela de Emolumentos</div>'
     +'<div class="page-subtitle">Atualize os emolumentos — ISSQN e Total recalculados automaticamente</div></div>'
-    +(A.user&&A.user.role==="supervisor"?'<div style="display:flex;gap:.5rem"><button class="btn btn-secondary" id="bNovoAto"><i class="ti ti-plus"></i> Novo Ato</button><button class="btn btn-primary" id="bSvTabela"><i class="ti ti-device-floppy"></i> Salvar Tabela</button></div>':'<span class="text-sm text-muted"><i class="ti ti-lock"></i> Apenas supervisor pode editar</span>')
-    +'</div>'
-    +'<div class="flex gap-sm" style="margin-bottom:1rem">'
+    +(isSup?'<div style="display:flex;gap:.5rem"><button class="btn btn-secondary" id="bNovoAto"><i class="ti ti-plus"></i> Novo Ato</button><button class="btn btn-primary" id="bSvTabela"><i class="ti ti-device-floppy"></i> Salvar Tabela</button></div>':'<span class="text-sm text-muted"><i class="ti ti-lock"></i> Apenas supervisor pode editar</span>')
+    +'</div>';
+
+  // Year/version selector bar
+  h+='<div class="card" style="margin-bottom:1rem;padding:.75rem">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">';
+  h+='<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">';
+  h+='<span style="font-size:12px;font-weight:700;color:var(--muted)"><i class="ti ti-calendar"></i> Tabela vigente:</span>';
+  for(var ai=0;ai<anos.length;ai++){
+    var ano=anos[ai];
+    var t=tabelasEmol[ano];
+    var isViewing=ano===anoView;
+    h+='<button class="btn btn-sm '+(isViewing?"btn-primary":"btn-secondary")+'" data-sel-ano="'+ano+'" style="position:relative">';
+    h+=ano;
+    if(t.ativa)h+=' <span style="background:#16a34a;color:#fff;border-radius:8px;padding:0 5px;font-size:9px;margin-left:3px">ATIVA</span>';
+    h+='</button>';
+  }
+  h+='</div>';
+  if(isSup){
+    h+='<div style="display:flex;gap:.5rem">';
+    h+='<button class="btn btn-secondary btn-sm" id="bNovaTabelaAno"><i class="ti ti-calendar-plus"></i> Nova Tabela (Ano)</button>';
+    if(anoView!==anoAtivo){
+      h+='<button class="btn btn-primary btn-sm" id="bAtivarTabela"><i class="ti ti-check"></i> Ativar esta tabela</button>';
+    }
+    if(anos.length>1){
+      h+='<button class="btn btn-danger btn-sm" id="bExcluirTabelaAno" title="Excluir tabela do ano '+anoView+'"><i class="ti ti-trash"></i></button>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  if(anoView!==anoAtivo){
+    h+='<div style="margin-top:.5rem;background:#fef3c7;color:#92400e;border-radius:var(--r);padding:.5rem .75rem;font-size:12px"><i class="ti ti-alert-triangle"></i> Voce esta visualizando a tabela de '+anoView+', mas a tabela ATIVA (usada nos orcamentos) e a de '+anoAtivo+'.</div>';
+  }
+  h+='</div>';
+
+  h+='<div class="flex gap-sm" style="margin-bottom:1rem">'
     +'<button class="btn btn-sm '+(tab==="notas"?"btn-primary":"btn-secondary")+'" id="bTabNotas">Tabelionato de Notas</button>'
     +'<button class="btn btn-sm '+(tab==="registro"?"btn-primary":"btn-secondary")+'" id="bTabReg">Registro de Imoveis</button>'
     +'</div>'
@@ -7302,6 +7385,80 @@ function bindApp(){
   for(var ecli=0;ecli<ecls.length;ecli++)(function(btn){btn.onclick=function(){if(!(A.user&&A.user.role==="supervisor"))return;A.ecl=btn.dataset.ecl;A.modal="editCl";renderModal();};})(ecls[ecli]);
   // Tabela emolumentos bindings
   if(A.page==="tabela_emol"){
+    // Select year to view
+    document.querySelectorAll("[data-sel-ano]").forEach(function(btn){
+      btn.onclick=function(){
+        A.anoView=btn.dataset.selAno;
+        render();
+      };
+    });
+
+    // Create new year table
+    var bNovaTab=document.getElementById("bNovaTabelaAno");
+    if(bNovaTab)bNovaTab.onclick=function(){
+      var novoAno=prompt("Digite o ano da nova tabela (ex: 2027):");
+      if(!novoAno)return;
+      novoAno=novoAno.trim();
+      if(!/^[0-9]{4}$/.test(novoAno)){toast("Digite um ano valido (4 digitos).","error");return;}
+      if(A.tabelasEmol&&A.tabelasEmol[novoAno]){toast("Ja existe uma tabela para o ano "+novoAno+".","error");return;}
+      var copiar=confirm("Deseja COPIAR os atos da tabela atualmente ativa ("+(A.anoAtivo||"")+") para a nova tabela de "+novoAno+"?\n\nOK = Copiar valores existentes\nCancelar = Comecar em branco");
+      var notasIni=[],regIni=[];
+      if(copiar&&A.tabelasEmol&&A.tabelasEmol[A.anoAtivo]){
+        notasIni=JSON.parse(JSON.stringify(A.tabelasEmol[A.anoAtivo].notas||[]));
+        regIni=JSON.parse(JSON.stringify(A.tabelasEmol[A.anoAtivo].registro||[]));
+      }
+      if(!A.tabelasEmol)A.tabelasEmol={};
+      A.tabelasEmol[novoAno]={
+        notas:notasIni,registro:regIni,ativa:false,
+        criadaEm:new Date().toISOString(),criadaPor:A.user.id
+      };
+      ssy(true);
+      db.collection("config").doc("tabelas_emolumentos").set({tabelas:A.tabelasEmol}).then(function(){
+        ssy(false);
+        A.anoView=novoAno;
+        toast("Tabela "+novoAno+" criada"+(copiar?" com os atos copiados!":" em branco!"));
+        render();
+      }).catch(function(err){ssy(false);toast("Erro: "+err.message,"error");});
+    };
+
+    // Activate viewed year table
+    var bAtivar=document.getElementById("bAtivarTabela");
+    if(bAtivar)bAtivar.onclick=function(){
+      var anoParaAtivar=A.anoView;
+      if(!anoParaAtivar||!A.tabelasEmol||!A.tabelasEmol[anoParaAtivar])return;
+      if(!confirm("Ativar a tabela de "+anoParaAtivar+"?\n\nTodos os orcamentos (novos e ja abertos) passarao a usar os valores desta tabela."))return;
+      ssy(true);
+      // Deactivate all, activate the chosen one
+      Object.keys(A.tabelasEmol).forEach(function(ano){A.tabelasEmol[ano].ativa=(ano===anoParaAtivar);});
+      db.collection("config").doc("tabelas_emolumentos").set({tabelas:A.tabelasEmol}).then(function(){
+        ssy(false);
+        A.anoAtivo=anoParaAtivar;
+        toast("Tabela de "+anoParaAtivar+" agora esta ATIVA!");
+        render();
+      }).catch(function(err){ssy(false);toast("Erro: "+err.message,"error");});
+    };
+
+    // Delete year table
+    var bExcluirTab=document.getElementById("bExcluirTabelaAno");
+    if(bExcluirTab)bExcluirTab.onclick=function(){
+      var anoExcluir=A.anoView;
+      if(!anoExcluir||!A.tabelasEmol)return;
+      if(A.tabelasEmol[anoExcluir]&&A.tabelasEmol[anoExcluir].ativa){
+        toast("Nao e possivel excluir a tabela ATIVA. Ative outra tabela primeiro.","error");
+        return;
+      }
+      if(!confirm("Excluir PERMANENTEMENTE a tabela de "+anoExcluir+"?\n\nTodos os atos cadastrados nela serao perdidos. Esta acao nao pode ser desfeita."))return;
+      ssy(true);
+      delete A.tabelasEmol[anoExcluir];
+      db.collection("config").doc("tabelas_emolumentos").set({tabelas:A.tabelasEmol}).then(function(){
+        ssy(false);
+        var anosRestantes=Object.keys(A.tabelasEmol);
+        A.anoView=A.anoAtivo||anosRestantes[0];
+        toast("Tabela "+anoExcluir+" excluida.");
+        render();
+      }).catch(function(err){ssy(false);toast("Erro: "+err.message,"error");});
+    };
+
     var bTabN=document.getElementById("bTabNotas");
     if(bTabN)bTabN.onclick=function(){A.tabelaTab="notas";render();};
     var bTabR=document.getElementById("bTabReg");
@@ -7339,10 +7496,11 @@ function bindApp(){
     var bSvTab=document.getElementById("bSvTabela");
     if(bSvTab)bSvTab.onclick=function(){
       bSvTab.disabled=true;ssy(true);
-      db.collection("config").doc("tabela_emolumentos").set({
-        notas:TABELA_NOTAS,registro:TABELA_REG,
-        ano:2026,updatedAt:new Date().toISOString(),updatedBy:A.user.id
-      }).then(function(){ssy(false);bSvTab.disabled=false;toast("Tabela salva!");});
+      saveTabelaEmolumentos(function(){
+        ssy(false);bSvTab.disabled=false;toast("Tabela salva!");
+      },function(err){
+        ssy(false);bSvTab.disabled=false;toast("Erro: "+err.message,"error");
+      });
     };
 
     // Novo Ato handler
@@ -7389,10 +7547,9 @@ function bindApp(){
         if(!confirm("Excluir ato \""+ato.desc+"\" (codigo "+ato.cod+")?\n\nEsta acao nao pode ser desfeita."))return;
         tabData2.splice(i2,1);
         ssy(true);
-        db.collection("config").doc("tabela_emolumentos").set({
-          notas:TABELA_NOTAS,registro:TABELA_REG,
-          ano:2026,updatedAt:new Date().toISOString(),updatedBy:A.user.id
-        }).then(function(){ssy(false);toast("Ato excluido!");render();}).catch(function(err){
+        saveTabelaEmolumentos(function(){
+          ssy(false);toast("Ato excluido!");render();
+        },function(err){
           ssy(false);toast("Erro ao excluir: "+err.message,"error");
         });
       };
@@ -7615,14 +7772,11 @@ function bindModal(){
       }
 
       ssy(true);
-      db.collection("config").doc("tabela_emolumentos").set({
-        notas:TABELA_NOTAS,registro:TABELA_REG,
-        ano:2026,updatedAt:new Date().toISOString(),updatedBy:A.user.id
-      }).then(function(){
+      saveTabelaEmolumentos(function(){
         ssy(false);A.modal=null;A.editAtoIdx=null;A.dupAtoMode=false;ov.remove();
         toast((editMode&&!isDup?"Ato \""+desc+"\" atualizado!":"Ato \""+desc+"\" salvo!"));
         render();
-      }).catch(function(err){
+      },function(err){
         ssy(false);
         if(errEl)errEl.innerHTML='<div class="error-msg">Erro ao salvar: '+err.message+'</div>';
       });
