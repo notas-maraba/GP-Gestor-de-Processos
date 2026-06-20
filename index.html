@@ -7989,7 +7989,6 @@ function bindModal(){
         for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
         A.modal=null;A.pendingAdvance=null;
         if(ov)ov.remove();
-        renderModal();
         toast("Avancado para "+nx.label+" — Responsavel: "+respName);
         render();
       }).catch(function(err){
