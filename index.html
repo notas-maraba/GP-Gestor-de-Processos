@@ -1192,6 +1192,102 @@ function rUsers(){
 }
 
 function rProd(){
+  // ---- CARGA DE TRABALHO ATUAL (minutando / conferindo agora) ----
+  var minutandoPor={},conferindoPor={};
+  for(var wi=0;wi<A.processes.length;wi++){
+    var wp=A.processes[wi];
+    if(wp.status==="minutando"&&wp.minutadoPor){
+      if(!minutandoPor[wp.minutadoPor])minutandoPor[wp.minutadoPor]=[];
+      minutandoPor[wp.minutadoPor].push(wp);
+    }
+    if(wp.status==="conferindo"&&wp.conferidoPor){
+      if(!conferindoPor[wp.conferidoPor])conferindoPor[wp.conferidoPor]=[];
+      conferindoPor[wp.conferidoPor].push(wp);
+    }
+  }
+  // Completion counts this month
+  var hoje2=new Date();
+  var inicioMes=new Date(hoje2.getFullYear(),hoje2.getMonth(),1).toISOString();
+  var minutadosMes={},conferidosMes={},minutadosHoje={},conferidosHoje={};
+  var inicioHoje=new Date(hoje2.getFullYear(),hoje2.getMonth(),hoje2.getDate()).toISOString();
+  for(var wi2=0;wi2<A.processes.length;wi2++){
+    var wp2=A.processes[wi2];
+    if(wp2.minutadoFimEm&&wp2.minutadoPor){
+      if(wp2.minutadoFimEm>=inicioMes)minutadosMes[wp2.minutadoPor]=(minutadosMes[wp2.minutadoPor]||0)+1;
+      if(wp2.minutadoFimEm>=inicioHoje)minutadosHoje[wp2.minutadoPor]=(minutadosHoje[wp2.minutadoPor]||0)+1;
+    }
+    if(wp2.conferidoFimEm&&wp2.conferidoPor){
+      if(wp2.conferidoFimEm>=inicioMes)conferidosMes[wp2.conferidoPor]=(conferidosMes[wp2.conferidoPor]||0)+1;
+      if(wp2.conferidoFimEm>=inicioHoje)conferidosHoje[wp2.conferidoPor]=(conferidosHoje[wp2.conferidoPor]||0)+1;
+    }
+  }
+
+  var auxiliares=A.users.filter(function(u){return ["auxiliar","escrevente","supervisor"].indexOf(u.role)>=0;});
+  var escreventes=A.users.filter(function(u){return ["escrevente","supervisor"].indexOf(u.role)>=0;});
+
+  function cargaTable(titulo,icon,cor,pessoasMap,emMaosMap,concluidosHojeMap,concluidosMesMap){
+    var rows=pessoasMap.filter(function(u){return (emMaosMap[u.id]&&emMaosMap[u.id].length)||concluidosMesMap[u.id];});
+    if(!rows.length)return '';
+    var h2='<div style="font-size:13px;font-weight:700;color:'+cor+';margin-bottom:.5rem;display:flex;align-items:center;gap:6px"><i class="ti '+icon+'"></i> '+titulo+'</div>';
+    h2+='<div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem">';
+    h2+='<table style="width:100%;border-collapse:collapse"><thead><tr style="background:'+cor+';color:#fff">';
+    h2+='<th style="padding:8px 10px;text-align:left;font-size:11px">Pessoa</th>';
+    h2+='<th style="padding:8px 10px;font-size:11px">Em maos agora</th>';
+    h2+='<th style="padding:8px 10px;font-size:11px">Concluidos hoje</th>';
+    h2+='<th style="padding:8px 10px;font-size:11px">Concluidos no mes</th>';
+    h2+='</tr></thead><tbody>';
+    rows.sort(function(a,b){return (emMaosMap[b.id]?emMaosMap[b.id].length:0)-(emMaosMap[a.id]?emMaosMap[a.id].length:0);});
+    for(var ri=0;ri<rows.length;ri++){
+      var u=rows[ri];
+      var emMaos=emMaosMap[u.id]?emMaosMap[u.id].length:0;
+      var alerta=emMaos>=10;
+      h2+='<tr style="border-bottom:1px solid var(--border)'+(alerta?';background:#fef3c7':'')+'">';
+      h2+='<td style="padding:7px 10px">'+avBadge(u.name,u.photo,24)+' <span style="margin-left:6px;font-weight:600">'+ex(u.name)+'</span>'+(alerta?' <i class="ti ti-alert-triangle" style="color:#d97706" title="Carga alta"></i>':'')+'</td>';
+      h2+='<td style="padding:7px 10px;text-align:center;font-weight:700;font-size:14px">'+emMaos+'</td>';
+      h2+='<td style="padding:7px 10px;text-align:center">'+(concluidosHojeMap[u.id]||0)+'</td>';
+      h2+='<td style="padding:7px 10px;text-align:center">'+(concluidosMesMap[u.id]||0)+'</td>';
+      h2+='</tr>';
+    }
+    h2+='</tbody></table></div>';
+    return h2;
+  }
+
+  var cargaHtml='<div class="page-header"><div><div class="page-title"><i class="ti ti-clipboard-list" style="margin-right:.5rem"></i>Carga de Trabalho</div>'
+    +'<div class="page-subtitle">Quem esta minutando/conferindo agora, e quanto cada um produziu</div></div></div>';
+  cargaHtml+=cargaTable("Minutando agora","ti-writing","#7c3aed",auxiliares,minutandoPor,minutadosHoje,minutadosMes);
+  cargaHtml+=cargaTable("Conferindo agora","ti-checkup-list","#0891b2",escreventes,conferindoPor,conferidosHoje,conferidosMes);
+  if(!Object.keys(minutandoPor).length&&!Object.keys(conferindoPor).length){
+    cargaHtml+='<div class="card" style="text-align:center;padding:1.5rem;color:var(--muted);margin-bottom:1.5rem">Nenhum processo em minutando/conferindo com responsavel definido ainda.</div>';
+  }
+
+  // Pendencias / retrabalho summary
+  var pendPorAuxiliar={};
+  for(var pwi=0;pwi<A.processes.length;pwi++){
+    var pwp=A.processes[pwi];
+    if(pwp.pendenciasCount&&pwp.pendenciasCount>0){
+      var resp=pwp.minutadoPor||"?";
+      pendPorAuxiliar[resp]=(pendPorAuxiliar[resp]||0)+pwp.pendenciasCount;
+    }
+  }
+  var pendKeys=Object.keys(pendPorAuxiliar);
+  if(pendKeys.length){
+    cargaHtml+='<div style="font-size:13px;font-weight:700;color:#d97706;margin-bottom:.5rem;display:flex;align-items:center;gap:6px"><i class="ti ti-alert-triangle"></i> Pendencias devolvidas (retrabalho)</div>';
+    cargaHtml+='<div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem">';
+    cargaHtml+='<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#d97706;color:#fff">';
+    cargaHtml+='<th style="padding:8px 10px;text-align:left;font-size:11px">Auxiliar</th><th style="padding:8px 10px;font-size:11px">Total de devolucoes</th></tr></thead><tbody>';
+    var pendSorted=pendKeys.map(function(uid){return {uid:uid,count:pendPorAuxiliar[uid]};});
+    pendSorted.sort(function(a,b){return b.count-a.count;});
+    for(var psi=0;psi<pendSorted.length;psi++){
+      var pu=getUserById(pendSorted[psi].uid);
+      cargaHtml+='<tr style="border-bottom:1px solid var(--border)">';
+      cargaHtml+='<td style="padding:7px 10px">'+(pu?avBadge(pu.name,pu.photo,24):'')+' <span style="margin-left:6px;font-weight:600">'+(pu?ex(pu.name):'Desconhecido')+'</span></td>';
+      cargaHtml+='<td style="padding:7px 10px;text-align:center;font-weight:700;color:#d97706">'+pendSorted[psi].count+'</td>';
+      cargaHtml+='</tr>';
+    }
+    cargaHtml+='</tbody></table></div>';
+  }
+  cargaHtml+='<div style="border-top:2px dashed var(--border);margin:1.5rem 0"></div>';
+
   var cnt={},cc={};
   for(var ui=0;ui<A.users.length;ui++){cnt[A.users[ui].id]=0;cc[A.users[ui].id]=0;}
   for(var pi=0;pi<A.processes.length;pi++){cnt[A.processes[pi].createdBy]=(cnt[A.processes[pi].createdBy]||0)+1;var cms=A.processes[pi].comments||[];for(var ci=0;ci<cms.length;ci++)cc[cms[ci].authorId]=(cc[cms[ci].authorId]||0)+1;}
@@ -1204,7 +1300,7 @@ function rProd(){
   h+='</div><div><div class="card mb-md"><div class="card-title" style="margin-bottom:1rem">Resumo</div><div class="stat-label">Total protocolos</div><div class="stat-value">'+A.processes.length+'</div><div class="divider"></div><div class="stat-label">Total comentarios</div><div class="stat-value" style="font-size:22px">'+tcm+'</div></div>'
   +'<div class="card"><div class="card-title" style="margin-bottom:.75rem">Comentarios</div>';
   for(var pu=0;pu<A.users.length;pu++)h+='<div class="flex justify-between items-center" style="padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span>'+ex(A.users[pu].name.split(" ").slice(0,2).join(" "))+'</span><span style="font-family:var(--mono);font-weight:600;color:var(--accent)">'+(cc[A.users[pu].id]||0)+'</span></div>';
-  h+='</div></div></div>';return h;
+  h+='</div></div></div>';return cargaHtml+h;
 }
 
 // PARTES
@@ -1292,7 +1388,7 @@ function colP(prefix,list){
 
 // MODAL
 function renderModal(){var ov=document.getElementById("mOv");if(ov)ov.remove();var el=document.createElement("div");el.id="mOv";el.className="modal-overlay no-print";el.innerHTML=gMH();document.body.appendChild(el);bindModal();bindMoneyInputs(el);}
-function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();if(A.modal==="photoEdit")return mPhotoEdit();if(A.modal==="novoAto")return mNovoAto();if(A.modal==="copyCl")return mCopyCl();return "";}
+function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();if(A.modal==="photoEdit")return mPhotoEdit();if(A.modal==="novoAto")return mNovoAto();if(A.modal==="copyCl")return mCopyCl();if(A.modal==="pickResp")return mPickResp();if(A.modal==="devolverPend")return mDevolverPend();return "";}
 
 function mNovo(){
   var nat=A.fnat2,groups=glGroups(nat),fields=glFields(nat),no="";
@@ -1406,7 +1502,7 @@ function mVer(){
   +(ca?(function(){
     var ncolors={cadastrado:"background:#e0f2fe;color:#0369a1",para_minutar:"background:#fef9c3;color:#854d0e",minutando:"background:#fef3c7;color:#92400e",para_conferir:"background:#fce7f3;color:#9d174d",conferindo:"background:#f3e8ff;color:#6b21a8",aguard_assinatura:"background:#dbeafe;color:#1e40af",assinado:"background:#dcfce7;color:#166534",registro:"background:#1a3a5c;color:#fff"};
     var nstyle=ncolors[nx.key]||"background:#e5e7eb;color:#111";
-    return '<button class="btn btn-sm" id="bAdv" style="'+nstyle+';border:none"><i class="ti ti-arrow-right"></i> Avancar: '+nx.label+'</button>';
+    return '<button class="btn btn-sm" id="bAdv" style="'+nstyle+';border:none"><i class="ti ti-arrow-right"></i> Avancar: '+nx.label+'</button>'+(s.key==="conferindo"?'<button class="btn btn-sm" id="bDevolverPend" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;margin-left:4px"><i class="ti ti-alert-triangle"></i> Devolver com Pendencias</button>':'');
   })():"")
   
   +'<button class="btn btn-secondary btn-sm" id="bPrt"><i class="ti ti-printer"></i></button>'
@@ -1545,7 +1641,7 @@ function tComm(p){
     h+='<div style="display:flex;gap:8px;align-items:flex-end;'+(isMe?'flex-direction:row-reverse':'')+'">'+avBadge(cName,cUser.photo,32);
     h+='<div style="max-width:72%"><div style="font-size:13px;padding:8px 12px;border-radius:'+(isMe?'14px 4px 14px 14px':'4px 14px 14px 14px')+';background:'+(isMe?'var(--accent)':'var(--surface2)')+';color:'+(isMe?'#fff':'var(--text)')+';line-height:1.5;word-break:break-word;white-space:pre-wrap">';
     if(!isMe)h=''+h+'<div style="font-size:11px;font-weight:700;margin-bottom:3px">'+ex(cName)+'</div>';
-    h+=ex(c.text).replace(/<strong/g,'<strong').replace(/@(\w+)/g,'@$1')+'</div>';
+    h+=ex(c.text).replace(/@([\wÀ-ÿ]+)/g,'<strong>@$1</strong>')+'</div>';
     h+='<div style="display:flex;align-items:center;gap:4px;margin-top:3px;'+(isMe?'justify-content:flex-end':'')+'">'
       +'<span style="font-size:10px;color:var(--muted)">'+fdt(c.createdAt)+'</span>'
       +(isMe?'<button style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px;padding:0 2px" data-dc="'+ci+'"><i class="ti ti-trash"></i></button>':'')
@@ -7239,6 +7335,57 @@ function mCopyCl(){
     +'</div></div>';
 }
 
+function mPickResp(){
+  var etapa=A.pendingAdvance;
+  var etapaLabel=etapa==="minutando"?"Minutando":"Conferindo";
+  var roleNeeded=etapa==="minutando"?"auxiliar":"escrevente";
+  // List users that can perform this role: minutando -> auxiliar+escrevente+supervisor; conferindo -> escrevente+supervisor
+  var elegiveis=A.users.filter(function(u){
+    if(etapa==="minutando")return ["auxiliar","escrevente","supervisor"].indexOf(u.role)>=0;
+    return ["escrevente","supervisor"].indexOf(u.role)>=0;
+  });
+  return '<div class="modal" style="max-width:420px">'
+    +'<div class="modal-header"><div class="modal-title"><i class="ti ti-user-check"></i> Quem vai '+(etapa==="minutando"?"minutar":"conferir")+'?</div>'
+    +'<button class="close-btn" id="cm">x</button></div>'
+    +'<div class="modal-body">'
+    +'<div style="background:var(--surface2);border-radius:var(--r);padding:.6rem .75rem;margin-bottom:.75rem;font-size:12px;color:var(--muted)">'
+    +'<i class="ti ti-info-circle"></i> E obrigatorio definir o responsavel antes de avancar para "'+etapaLabel+'".'
+    +'</div>'
+    +'<div class="field"><label>Responsavel *</label>'
+    +'<select id="pickRespUser">'
+    +'<option value="">-- Selecione --</option>'
+    +elegiveis.map(function(u){return '<option value="'+u.id+'"'+(u.id===A.user.id?' selected':'')+'>'+ex(u.name)+(u.id===A.user.id?' (eu)':'')+'</option>';}).join('')
+    +'</select></div>'
+    +'<div id="pickRespErr" style="margin-top:.5rem"></div>'
+    +'</div>'
+    +'<div class="modal-footer">'
+    +'<button class="btn btn-secondary" id="cm2">Cancelar</button>'
+    +'<button class="btn btn-primary" id="bConfPickResp"><i class="ti ti-check"></i> Confirmar e Avancar</button>'
+    +'</div></div>';
+}
+
+function mDevolverPend(){
+  var p=A.sel;
+  var minutadorNome=p.minutadoPorNome||"o auxiliar responsavel";
+  var cadastradorNome=gun(p.createdBy)||"quem cadastrou";
+  return '<div class="modal" style="max-width:480px">'
+    +'<div class="modal-header"><div class="modal-title" style="color:#92400e"><i class="ti ti-alert-triangle"></i> Devolver com Pendencias</div>'
+    +'<button class="close-btn" id="cm">x</button></div>'
+    +'<div class="modal-body">'
+    +'<div style="background:#fef3c7;border-radius:var(--r);padding:.6rem .75rem;margin-bottom:.75rem;font-size:12px;color:#92400e">'
+    +'<i class="ti ti-info-circle"></i> O protocolo voltara para <strong>Minutando</strong>, com '+ex(minutadorNome)+' como responsavel. '
+    +'O motivo sera publicado no chat, notificando '+ex(minutadorNome)+' e '+ex(cadastradorNome)+'.'
+    +'</div>'
+    +'<div class="field"><label>O que precisa ser corrigido? *</label>'
+    +'<textarea id="pendMotivo" placeholder="Ex: Falta CPF do conjuge na escritura. Valor do imovel diverge do documento apresentado." style="width:100%;min-height:110px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;resize:vertical"></textarea></div>'
+    +'<div id="pendErr" style="margin-top:.5rem"></div>'
+    +'</div>'
+    +'<div class="modal-footer">'
+    +'<button class="btn btn-secondary" id="cm2">Cancelar</button>'
+    +'<button class="btn btn-primary" id="bConfDevolver" style="background:#d97706;border-color:#d97706"><i class="ti ti-arrow-back-up"></i> Devolver para Minutando</button>'
+    +'</div></div>';
+}
+
 function bindApp(){
   var bThemeEl=document.getElementById('bTheme');
   if(bThemeEl)bThemeEl.onclick=toggleTheme;
@@ -7806,6 +7953,119 @@ function bindModal(){
   var cls=ov.querySelectorAll("#cm,#cm2");
   for(var ci=0;ci<cls.length;ci++)(function(btn){btn.onclick=function(){A.modal=null;A.etr=null;A.ead=null;A._fPr=null;A._fDa=null;A._fDs=null;A._fMa=null;A._fRe=null;A._fVl=null;A._fPgInfo=null;A._fPago=false;A.fpartes={};A._fImoveis=null;A.editAtoIdx=null;A.dupAtoMode=false;A.copyNatSrc=null;ov.remove();};})(cls[ci]);
   // Novo Ato modal
+  // Pick responsible for minutando/conferindo
+  if(A.modal==="pickResp"){
+    var bConfPR=ov.querySelector("#bConfPickResp");
+    if(bConfPR)bConfPR.onclick=function(){
+      var uid=(ov.querySelector("#pickRespUser")||{}).value||"";
+      var errEl=ov.querySelector("#pickRespErr");
+      if(!uid){if(errEl)errEl.innerHTML='<div class="error-msg">Selecione um responsavel.</div>';return;}
+      var p=A.sel;
+      var etapa=A.pendingAdvance;
+      var nx=gs(etapa);
+      var respUser=getUserById(uid);
+      var respName=respUser?respUser.name:"";
+      var nowIso=new Date().toISOString();
+
+      var hist=JSON.parse(JSON.stringify(p.statusHistory||[]));
+      hist.push({status:nx.key,by:A.user.id,at:nowIso});
+
+      var upd={status:nx.key,statusHistory:hist};
+      // Store who is responsible for this stage + when it started
+      if(etapa==="minutando"){
+        upd.minutadoPor=uid;
+        upd.minutadoPorNome=respName;
+        upd.minutadoInicioEm=nowIso;
+      } else if(etapa==="conferindo"){
+        upd.conferidoPor=uid;
+        upd.conferidoPorNome=respName;
+        upd.conferidoInicioEm=nowIso;
+      }
+
+      ssy(true);
+      db.collection("processes").doc(p.id).update(upd).then(function(){
+        ssy(false);
+        Object.assign(p,upd);
+        for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
+        A.modal=null;A.pendingAdvance=null;
+        if(ov)ov.remove();
+        renderModal();
+        toast("Avancado para "+nx.label+" — Responsavel: "+respName);
+        render();
+      }).catch(function(err){
+        ssy(false);
+        if(errEl)errEl.innerHTML='<div class="error-msg">Erro: '+err.message+'</div>';
+      });
+    };
+  }
+
+  // Devolver com pendencias
+  if(A.modal==="devolverPend"){
+    var bConfDev=ov.querySelector("#bConfDevolver");
+    if(bConfDev)bConfDev.onclick=function(){
+      var motivo=(ov.querySelector("#pendMotivo")||{}).value||"";
+      motivo=motivo.trim();
+      var errEl=ov.querySelector("#pendErr");
+      if(!motivo){if(errEl)errEl.innerHTML='<div class="error-msg">Descreva o que precisa ser corrigido.</div>';return;}
+
+      var p=A.sel;
+      var minutadorId=p.minutadoPor||"";
+      var minutadorNome=p.minutadoPorNome||"";
+      var cadastradorId=p.createdBy||"";
+      var cadastradorNome=gun(cadastradorId)||"";
+
+      // Build the comment text with @mentions so both get notified
+      var mentionNames=[];
+      if(minutadorNome)mentionNames.push("@"+minutadorNome.split(" ")[0]);
+      if(cadastradorNome&&cadastradorId!==minutadorId)mentionNames.push("@"+cadastradorNome.split(" ")[0]);
+      var commentText="PENDENCIA NA CONFERENCIA "+mentionNames.join(" ")+"\n\n"+motivo;
+
+      var cs=JSON.parse(JSON.stringify(p.comments||[]));
+      var mentions=[];
+      if(minutadorId)mentions.push(minutadorId);
+      if(cadastradorId&&cadastradorId!==minutadorId)mentions.push(cadastradorId);
+      cs.push({id:"c"+Date.now(),authorId:A.user.id,text:commentText,createdAt:new Date().toISOString(),mentions:mentions,isPendencia:true});
+
+      var unreadBy=JSON.parse(JSON.stringify(p.unreadBy||{}));
+      mentions.forEach(function(uid){unreadBy[uid]=(unreadBy[uid]||0)+1;});
+
+      var mentionedUsers=JSON.parse(JSON.stringify(p.mentionedUsers||{}));
+      mentions.forEach(function(uid){mentionedUsers[uid]=true;});
+
+      var hist=JSON.parse(JSON.stringify(p.statusHistory||[]));
+      hist.push({status:"minutando",by:A.user.id,at:new Date().toISOString(),pendencia:true});
+
+      var pendCount=(p.pendenciasCount||0)+1;
+
+      var upd={
+        status:"minutando",
+        statusHistory:hist,
+        comments:cs,
+        unreadBy:unreadBy,
+        mentionedUsers:mentionedUsers,
+        lastMessage:commentText,
+        lastMessageAt:new Date().toISOString(),
+        lastMessageBy:A.user.id,
+        pendenciasCount:pendCount,
+        minutadoInicioEm:new Date().toISOString()
+      };
+
+      ssy(true);
+      db.collection("processes").doc(p.id).update(upd).then(function(){
+        ssy(false);
+        Object.assign(p,upd);
+        for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
+        A.modal=null;
+        if(ov)ov.remove();
+        toast("Protocolo devolvido para Minutando com pendencias.");
+        render();
+      }).catch(function(err){
+        ssy(false);
+        if(errEl)errEl.innerHTML='<div class="error-msg">Erro: '+err.message+'</div>';
+      });
+    };
+  }
+
   if(A.modal==="novoAto"){
     var bConfNA=ov.querySelector("#bConfNovoAto");
     if(bConfNA)bConfNA.onclick=function(){
@@ -8245,8 +8505,24 @@ function bindModal(){
   if(bAdvEl)bAdvEl.onclick=function(){
     var p=A.sel,nx=nxst(p);if(!nx)return;
     if(nx.key==="conferindo"){var ok=false;for(var ri2=0;ri2<CONF_ROLES.length;ri2++)if(CONF_ROLES[ri2]===A.user.role){ok=true;break;}if(!ok){toast("Apenas Escreventes e Supervisores podem mover para Conferindo!","error");return;}}
+    // Require responsible person when entering Minutando or Conferindo
+    if(nx.key==="minutando"||nx.key==="conferindo"){
+      A.pendingAdvance=nx.key;
+      A.modal="pickResp";
+      renderModal();
+      return;
+    }
     var hist=JSON.parse(JSON.stringify(p.statusHistory||[]));hist.push({status:nx.key,by:A.user.id,at:new Date().toISOString()});
-    ssy(true);db.collection("processes").doc(p.id).update({status:nx.key,statusHistory:hist}).then(function(){ssy(false);p.status=nx.key;p.statusHistory=hist;for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}ov.innerHTML=gMH();bindModal();toast("Avancado para: "+nx.label);});
+    var advUpd={status:nx.key,statusHistory:hist};
+    // Record completion timestamp when LEAVING minutando or conferindo
+    var nowIso2=new Date().toISOString();
+    if(p.status==="minutando")advUpd.minutadoFimEm=nowIso2;
+    if(p.status==="conferindo")advUpd.conferidoFimEm=nowIso2;
+    ssy(true);db.collection("processes").doc(p.id).update(advUpd).then(function(){ssy(false);Object.assign(p,advUpd);for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}ov.innerHTML=gMH();bindModal();toast("Avancado para: "+nx.label);});
+  };
+  var bDevolverEl=document.getElementById("bDevolverPend");
+  if(bDevolverEl)bDevolverEl.onclick=function(){
+    A.modal="devolverPend";renderModal();
   };
   var bBackEl=document.getElementById("bBack");
   if(bBackEl)bBackEl.onclick=function(){
@@ -8327,7 +8603,7 @@ function bindModal(){
 
   // Parse @mentions - ONLY mentioned users get notification
   var mentions=[];
-  var mentionRegex=/@([\w]+)/g;
+  var mentionRegex=/@([\wÀ-ÿ]+)/g;
   var mm;
   while((mm=mentionRegex.exec(tx))!==null){
     var mentionName=mm[1].toLowerCase();
@@ -8386,7 +8662,7 @@ function bindModal(){
               return '<div style="padding:6px 12px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px" data-mention="'+ex(u.name)+'">'+avBadge(u.name,u.photo,24)+'<span>'+ex(u.name)+'</span></div>';
             }).join('');
             mList.querySelectorAll('[data-mention]').forEach(function(el){
-              el.onmousedown=function(e){e.preventDefault();var name=el.dataset.mention;ncEl.value=val.substring(0,pos).replace(/@\w*$/,'@'+name+' ')+val.substring(pos);mList.style.display='none';ncEl.focus();};
+              el.onmousedown=function(e){e.preventDefault();var name=el.dataset.mention;ncEl.value=val.substring(0,pos).replace(/@[\wÀ-ÿ]*$/,'@'+name+' ')+val.substring(pos);mList.style.display='none';ncEl.focus();};
             });
           } else {mList.style.display='none';}
         } else if(mList){mList.style.display='none';}
