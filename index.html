@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -638,10 +639,14 @@ function loadCL(){
     }
     loadTabelaEmolumentos();
     subP();
+    setTimeout(checkAndRunWeeklyBackup,3000);
+    setTimeout(startSheetAutoSync,3500);
   }).catch(function(e){
     console.error("Erro ao carregar checklists:",e);
     loadTabelaEmolumentos();
     subP();
+    setTimeout(checkAndRunWeeklyBackup,3000);
+    setTimeout(startSheetAutoSync,3500);
   });
 }
 function loadOrcamentos(){
@@ -3509,6 +3514,45 @@ function rBackup(){
     +'<div id="backupStatus" style="margin-top:1rem"></div>'
     +'</div>'
     +'<div class="card" style="margin-top:1.5rem">'
+    +'<div class="card-header"><div class="card-title"><i class="ti ti-brand-google-drive"></i> Backup Automatico no Google Drive</div></div>'
+    +(isSup?(function(){
+      var authorized=!!localStorage.getItem("gdrive_token");
+      var lastSunday=localStorage.getItem("gdrive_last_backup_sunday");
+      var h2='<div style="background:'+(authorized?'#dcfce7':'#fef9c3')+';border-radius:var(--r);padding:.75rem 1rem;margin-bottom:1rem;font-size:13px">';
+      h2+=authorized
+        ?'<i class="ti ti-circle-check" style="color:#166534"></i> <strong>Google Drive autorizado.</strong> O sistema verifica automaticamente toda semana se o backup de domingo ja foi feito, e gera sozinho no primeiro acesso apos o domingo.'
+        :'<i class="ti ti-alert-triangle" style="color:#854d0e"></i> <strong>Google Drive ainda nao autorizado.</strong> Clique no botao abaixo para autorizar (uma unica vez). Depois disso, o backup semanal acontece sozinho.';
+      h2+='</div>';
+      if(lastSunday)h2+='<div class="text-sm text-muted" style="margin-bottom:.75rem"><i class="ti ti-clock"></i> Ultimo backup automatico: semana de '+fd(lastSunday)+'</div>';
+      h2+='<div class="flex gap-sm" style="flex-wrap:wrap">';
+      h2+='<button class="btn '+(authorized?'btn-secondary':'btn-primary')+'" id="bAuthDrive"><i class="ti ti-brand-google"></i> '+(authorized?'Reautorizar Google Drive':'Autorizar Google Drive')+'</button>';
+      if(authorized)h2+='<button class="btn btn-secondary" id="bBackupDriveAgora"><i class="ti ti-cloud-upload"></i> Fazer backup no Drive agora</button>';
+      h2+='</div>';
+      h2+='<div id="driveBackupStatus" style="margin-top:.75rem"></div>';
+      return h2;
+    })():'<span class="text-sm text-muted"><i class="ti ti-lock"></i> Apenas supervisor pode configurar o backup automatico</span>')
+    +'</div>'
+    +'<div class="card" style="margin-top:1.5rem">'
+    +'<div class="card-header"><div class="card-title"><i class="ti ti-table"></i> Planilha Google Sheets em Tempo Real</div></div>'
+    +(isSup?(function(){
+      var lastSync=localStorage.getItem("gsheet_last_sync");
+      var configured=!!GOOGLE_SHEET_ID;
+      var h3='<div style="background:'+(configured?'#dcfce7':'#fef9c3')+';border-radius:var(--r);padding:.75rem 1rem;margin-bottom:1rem;font-size:13px">';
+      h3+=configured
+        ?'<i class="ti ti-circle-check" style="color:#166534"></i> <strong>Planilha configurada.</strong> Sincroniza automaticamente a cada 15 minutos com Protocolo, Partes, Status e Comentarios de todos os processos (ativos e arquivados).'
+        :'<i class="ti ti-alert-triangle" style="color:#854d0e"></i> <strong>Planilha ainda nao configurada.</strong> Veja instrucoes com o desenvolvedor para criar e vincular a planilha.';
+      h3+='</div>';
+      if(lastSync)h3+='<div class="text-sm text-muted" style="margin-bottom:.75rem"><i class="ti ti-clock"></i> Ultima sincronizacao: '+fdt(lastSync)+'</div>';
+      if(configured){
+        h3+='<div class="flex gap-sm" style="flex-wrap:wrap">';
+        h3+='<button class="btn btn-secondary" id="bSyncSheetAgora"><i class="ti ti-refresh"></i> Sincronizar agora</button>';
+        h3+='</div>';
+        h3+='<div id="sheetSyncStatus" style="margin-top:.75rem"></div>';
+      }
+      return h3;
+    })():'<span class="text-sm text-muted"><i class="ti ti-lock"></i> Apenas supervisor pode configurar a sincronizacao</span>')
+    +'</div>'
+    +'<div class="card" style="margin-top:1.5rem">'
     +'<div class="card-header"><div class="card-title"><i class="ti ti-database"></i> Uso do Firebase em Tempo Real</div></div>'
     +'<div id="firebaseUsage"><div style="color:var(--muted);font-size:13px"><i class="ti ti-loader"></i> Carregando dados...</div></div>'
     +'</div>';
@@ -3516,6 +3560,75 @@ function rBackup(){
 }
 
 function bindBackup(){
+  // Sync Google Sheets now
+  var bSyncSheet=document.getElementById("bSyncSheetAgora");
+  if(bSyncSheet)bSyncSheet.onclick=function(){
+    bSyncSheet.disabled=true;
+    bSyncSheet.innerHTML='<i class="ti ti-loader"></i> Sincronizando...';
+    var statusEl=document.getElementById("sheetSyncStatus");
+    if(statusEl)statusEl.innerHTML='<div style="color:var(--muted);font-size:13px"><i class="ti ti-loader"></i> Atualizando planilha...</div>';
+    gsheetSyncNow(function(ok,result){
+      bSyncSheet.disabled=false;
+      bSyncSheet.innerHTML='<i class="ti ti-refresh"></i> Sincronizar agora';
+      if(ok){
+        if(statusEl)statusEl.innerHTML='<div style="color:var(--green);font-size:13px"><i class="ti ti-check"></i> Planilha atualizada! '+result+' protocolos, '+new Date().toLocaleString("pt-BR")+'</div>';
+        toast("Planilha sincronizada com sucesso!");
+      } else {
+        if(statusEl)statusEl.innerHTML='<div style="color:var(--red);font-size:13px"><i class="ti ti-alert-triangle"></i> Erro: '+result+'</div>';
+      }
+    });
+  };
+
+  // Google Drive authorization button
+  var bAuthD=document.getElementById("bAuthDrive");
+  if(bAuthD)bAuthD.onclick=function(){
+    if(!GOOGLE_DRIVE_CLIENT_ID){
+      toast("Backup ao Google Drive ainda nao foi configurado pelo desenvolvedor. Veja as instrucoes.","error");
+      return;
+    }
+    bAuthD.disabled=true;
+    gdriveInitTokenClient(function(ok){
+      bAuthD.disabled=false;
+      var statusEl=document.getElementById("driveBackupStatus");
+      if(ok){
+        if(statusEl)statusEl.innerHTML='<div style="color:var(--green);font-size:13px"><i class="ti ti-check"></i> Autorizado com sucesso!</div>';
+        toast("Google Drive autorizado com sucesso!");
+        render();
+      } else {
+        if(statusEl)statusEl.innerHTML='<div style="color:var(--red);font-size:13px"><i class="ti ti-alert-triangle"></i> Autorizacao nao concluida. Tente novamente.</div>';
+      }
+    });
+  };
+
+  // Manual "backup to Drive now" button
+  var bBackupDriveNow=document.getElementById("bBackupDriveAgora");
+  if(bBackupDriveNow)bBackupDriveNow.onclick=function(){
+    bBackupDriveNow.disabled=true;
+    bBackupDriveNow.innerHTML='<i class="ti ti-loader"></i> Enviando...';
+    var statusEl=document.getElementById("driveBackupStatus");
+    if(statusEl)statusEl.innerHTML='<div style="color:var(--muted);font-size:13px"><i class="ti ti-loader"></i> Buscando protocolos e enviando para o Drive...</div>';
+    db.collection("processes").get().then(function(snap){
+      var all=snap.docs.map(function(d){return d.data();});
+      var csv=buildBackupCSV(all);
+      var hoje=new Date().toISOString().split("T")[0];
+      var filename="backup-protocolos-manual-"+hoje+".csv";
+      gdriveUploadCSV(csv,filename,function(ok,result){
+        bBackupDriveNow.disabled=false;
+        bBackupDriveNow.innerHTML='<i class="ti ti-cloud-upload"></i> Fazer backup no Drive agora';
+        if(ok){
+          if(statusEl)statusEl.innerHTML='<div style="color:var(--green);font-size:13px"><i class="ti ti-check"></i> Backup enviado ao Google Drive com sucesso! '+all.length+' protocolos, '+new Date().toLocaleString("pt-BR")+'</div>';
+          toast("Backup enviado ao Google Drive!");
+        } else {
+          if(statusEl)statusEl.innerHTML='<div style="color:var(--red);font-size:13px"><i class="ti ti-alert-triangle"></i> Erro ao enviar: '+result+'</div>';
+        }
+      });
+    }).catch(function(e){
+      bBackupDriveNow.disabled=false;
+      bBackupDriveNow.innerHTML='<i class="ti ti-cloud-upload"></i> Fazer backup no Drive agora';
+      if(statusEl)statusEl.innerHTML='<div style="color:var(--red);font-size:13px">Erro: '+e.message+'</div>';
+    });
+  };
+
   // Load archived count
   db.collection("processes").where("archived","==",true).get().then(function(s){
     var el=document.getElementById("backupArqCount");
@@ -7384,6 +7497,251 @@ function mDevolverPend(){
     +'<button class="btn btn-secondary" id="cm2">Cancelar</button>'
     +'<button class="btn btn-primary" id="bConfDevolver" style="background:#d97706;border-color:#d97706"><i class="ti ti-arrow-back-up"></i> Devolver para Minutando</button>'
     +'</div></div>';
+}
+
+// =============================================
+// BACKUP AUTOMATICO PARA GOOGLE DRIVE
+// =============================================
+// Client ID OAuth do Google Cloud Console (configurado pelo Supervisor)
+var GOOGLE_DRIVE_CLIENT_ID = ""; // Preencher apos criar no Google Cloud Console
+var DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets";
+var gdriveTokenClient = null;
+var gdriveAccessToken = null;
+
+function gdriveInitTokenClient(callback){
+  if(!window.google||!google.accounts||!google.accounts.oauth2){
+    toast("Servico do Google ainda carregando, tente novamente em alguns segundos.","error");
+    return;
+  }
+  if(!GOOGLE_DRIVE_CLIENT_ID){
+    toast("Backup ao Google Drive ainda nao foi configurado. Veja instrucoes com o desenvolvedor.","error");
+    return;
+  }
+  gdriveTokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:GOOGLE_DRIVE_CLIENT_ID,
+    scope:DRIVE_SCOPE,
+    callback:function(resp){
+      if(resp&&resp.access_token){
+        gdriveAccessToken=resp.access_token;
+        localStorage.setItem("gdrive_token",resp.access_token);
+        localStorage.setItem("gdrive_token_exp",String(Date.now()+(resp.expires_in||3600)*1000));
+        if(callback)callback(true);
+      } else {
+        if(callback)callback(false);
+      }
+    }
+  });
+  gdriveTokenClient.requestAccessToken({prompt:gdriveAccessToken?"":"consent"});
+}
+
+function gdriveGetValidToken(callback){
+  var saved=localStorage.getItem("gdrive_token");
+  var savedExp=parseInt(localStorage.getItem("gdrive_token_exp")||"0");
+  if(saved&&savedExp>Date.now()+60000){
+    gdriveAccessToken=saved;
+    callback(true);
+    return;
+  }
+  // Token expired or missing - request silently if possible, else interactive
+  gdriveInitTokenClient(callback);
+}
+
+function gdriveUploadCSV(csvContent,filename,onDone){
+  gdriveGetValidToken(function(ok){
+    if(!ok){if(onDone)onDone(false,"Autorizacao do Google Drive nao concedida.");return;}
+    var boundary="-------backupgp"+Date.now();
+    var metadata={name:filename,mimeType:"text/csv"};
+    // Find or create the "Backups GP" folder, then upload inside it
+    gdriveFindOrCreateFolder(function(folderId){
+      if(folderId)metadata.parents=[folderId];
+      var body="--"+boundary+"\r\n"
+        +"Content-Type: application/json; charset=UTF-8\r\n\r\n"
+        +JSON.stringify(metadata)+"\r\n"
+        +"--"+boundary+"\r\n"
+        +"Content-Type: text/csv\r\n\r\n"
+        +csvContent+"\r\n"
+        +"--"+boundary+"--";
+      fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",{
+        method:"POST",
+        headers:{
+          "Authorization":"Bearer "+gdriveAccessToken,
+          "Content-Type":"multipart/related; boundary="+boundary
+        },
+        body:body
+      }).then(function(r){
+        if(!r.ok)throw new Error("HTTP "+r.status);
+        return r.json();
+      }).then(function(data){
+        if(onDone)onDone(true,data);
+      }).catch(function(err){
+        if(onDone)onDone(false,err.message);
+      });
+    });
+  });
+}
+
+function gdriveFindOrCreateFolder(callback){
+  var q=encodeURIComponent("name='Backups GP' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  fetch("https://www.googleapis.com/drive/v3/files?q="+q,{
+    headers:{"Authorization":"Bearer "+gdriveAccessToken}
+  }).then(function(r){return r.json();}).then(function(data){
+    if(data.files&&data.files.length){
+      callback(data.files[0].id);
+    } else {
+      fetch("https://www.googleapis.com/drive/v3/files",{
+        method:"POST",
+        headers:{"Authorization":"Bearer "+gdriveAccessToken,"Content-Type":"application/json"},
+        body:JSON.stringify({name:"Backups GP",mimeType:"application/vnd.google-apps.folder"})
+      }).then(function(r){return r.json();}).then(function(folder){
+        callback(folder.id||null);
+      }).catch(function(){callback(null);});
+    }
+  }).catch(function(){callback(null);});
+}
+
+// Build CSV content (reuses the same export logic as manual backup)
+function buildBackupCSV(processos){
+  var rows=[];
+  var header=["Protocolo","Natureza","Status","Partes","Matricula(s)","Data Abertura","Data Assinatura","Responsavel/Corretor","Valor Imovel","Pagamento","Info Pagamento","Cadastrado por","Data Cadastro","Arquivado","Ultimo Comentario"];
+  rows.push(header);
+  for(var i=0;i<processos.length;i++){
+    var p=processos[i];
+    var natLabel=gn(p.natureza).label;
+    var stLabel=gs(p.status||"cadastrado").label;
+    var partes=getPartesStr(p);
+    var lastCom=getLastComment(p);
+    rows.push([p.protocol||"",natLabel,stLabel,partes,p.matriculas||"",p.dataAbertura||"",p.dataAssinatura||"",p.responsavel||"",p.valor||"",p.pago?"Pago":"Pendente",p.pgInfo||"",gun(p.createdBy)||"",p.createdAt||"",p.archived?"Sim":"Nao",lastCom]);
+  }
+  var csv=rows.map(function(row){
+    return row.map(function(cell){
+      var s=String(cell==null?"":cell);
+      if(s.indexOf(",")>=0||s.indexOf('"')>=0||s.indexOf("\n")>=0)s='"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }).join(";");
+  }).join("\n");
+  return csv;
+}
+
+// Check if a backup was already done for this week's Sunday, do it automatically if not
+function checkAndRunWeeklyBackup(){
+  if(!A.user||A.user.role!=="supervisor")return; // only supervisor triggers auto backup
+  if(!GOOGLE_DRIVE_CLIENT_ID)return; // not configured yet
+  var token=localStorage.getItem("gdrive_token");
+  if(!token)return; // not authorized yet - user must authorize once manually first
+
+  var hoje=new Date();
+  // Find the most recent Sunday (including today if today is Sunday)
+  var diasDesdeDomingo=hoje.getDay(); // 0=Sunday
+  var ultimoDomingo=new Date(hoje);
+  ultimoDomingo.setDate(hoje.getDate()-diasDesdeDomingo);
+  ultimoDomingo.setHours(0,0,0,0);
+  var chaveDomingo=ultimoDomingo.toISOString().split("T")[0];
+
+  var ultimoBackupFeito=localStorage.getItem("gdrive_last_backup_sunday");
+  if(ultimoBackupFeito===chaveDomingo)return; // already done for this week
+
+  // Run it
+  db.collection("processes").get().then(function(snap){
+    var all=snap.docs.map(function(d){return d.data();});
+    var csv=buildBackupCSV(all);
+    var filename="backup-protocolos-domingo-"+chaveDomingo+".csv";
+    gdriveUploadCSV(csv,filename,function(ok,result){
+      if(ok){
+        localStorage.setItem("gdrive_last_backup_sunday",chaveDomingo);
+        toast("Backup semanal do Google Drive realizado automaticamente! ("+all.length+" protocolos)");
+      }
+      // Silent fail - don't bother the user if it doesn't work, they can still do it manually
+    });
+  }).catch(function(){});
+}
+
+// =============================================
+// SINCRONIZACAO COM GOOGLE SHEETS (PLANILHA EM TEMPO REAL)
+// =============================================
+var GOOGLE_SHEET_ID = ""; // Preencher apos criar a planilha (pegar do link)
+var sheetSyncInterval = null;
+
+function gsheetEnsureHeader(callback){
+  var range="A1:F1";
+  fetch("https://sheets.googleapis.com/v4/spreadsheets/"+GOOGLE_SHEET_ID+"/values/"+range+"?valueInputOption=RAW",{
+    method:"PUT",
+    headers:{"Authorization":"Bearer "+gdriveAccessToken,"Content-Type":"application/json"},
+    body:JSON.stringify({values:[["Protocolo","Transmitente","Adquirente","Responsavel","Status","Comentarios"]]})
+  }).then(function(r){return r.json();}).then(function(){if(callback)callback(true);}).catch(function(){if(callback)callback(false);});
+}
+
+function gsheetBuildRows(processos){
+  var rows=[];
+  for(var i=0;i<processos.length;i++){
+    var p=processos[i];
+    var transmitentes=pn(p.transmitentes);
+    var adquirentes=pn(p.adquirentes);
+    var responsavel=p.responsavel||"";
+    var stLabel=gs(p.status||"cadastrado").label+(p.archived?" (Arquivado)":"");
+    var comentarios="";
+    if(p.comments&&p.comments.length){
+      comentarios=p.comments.map(function(c){
+        var autor=gun(c.authorId)||"?";
+        var data=c.createdAt?fdt(c.createdAt):"";
+        return "["+data+"] "+autor+": "+(c.text||"").replace(/\n/g," ");
+      }).join(" | ");
+    }
+    rows.push([p.protocol||"",transmitentes,adquirentes,responsavel,stLabel,comentarios]);
+  }
+  return rows;
+}
+
+function gsheetSyncNow(onDone){
+  if(!GOOGLE_SHEET_ID){if(onDone)onDone(false,"Planilha ainda nao configurada.");return;}
+  gdriveGetValidToken(function(ok){
+    if(!ok){if(onDone)onDone(false,"Autorizacao do Google nao concedida.");return;}
+    db.collection("processes").get().then(function(snap){
+      var all=snap.docs.map(function(d){return d.data();});
+      var rows=gsheetBuildRows(all);
+      // Clear existing data first (beyond header), then write fresh
+      fetch("https://sheets.googleapis.com/v4/spreadsheets/"+GOOGLE_SHEET_ID+"/values/A2:F100000:clear",{
+        method:"POST",
+        headers:{"Authorization":"Bearer "+gdriveAccessToken}
+      }).then(function(){
+        return gsheetEnsureHeaderPromise();
+      }).then(function(){
+        var range="A2:F"+(rows.length+1);
+        return fetch("https://sheets.googleapis.com/v4/spreadsheets/"+GOOGLE_SHEET_ID+"/values/"+range+"?valueInputOption=RAW",{
+          method:"PUT",
+          headers:{"Authorization":"Bearer "+gdriveAccessToken,"Content-Type":"application/json"},
+          body:JSON.stringify({values:rows})
+        });
+      }).then(function(r){
+        if(!r.ok)throw new Error("HTTP "+r.status);
+        return r.json();
+      }).then(function(){
+        localStorage.setItem("gsheet_last_sync",new Date().toISOString());
+        if(onDone)onDone(true,rows.length);
+      }).catch(function(err){
+        if(onDone)onDone(false,err.message);
+      });
+    }).catch(function(err){
+      if(onDone)onDone(false,err.message);
+    });
+  });
+}
+
+function gsheetEnsureHeaderPromise(){
+  return fetch("https://sheets.googleapis.com/v4/spreadsheets/"+GOOGLE_SHEET_ID+"/values/A1:F1?valueInputOption=RAW",{
+    method:"PUT",
+    headers:{"Authorization":"Bearer "+gdriveAccessToken,"Content-Type":"application/json"},
+    body:JSON.stringify({values:[["Protocolo","Transmitente","Adquirente","Responsavel","Status","Comentarios"]]})
+  });
+}
+
+function startSheetAutoSync(){
+  if(sheetSyncInterval)clearInterval(sheetSyncInterval);
+  if(!GOOGLE_SHEET_ID)return;
+  if(!localStorage.getItem("gdrive_token"))return; // needs prior authorization
+  // Sync every 15 minutes
+  sheetSyncInterval=setInterval(function(){
+    gsheetSyncNow(function(){});
+  },15*60*1000);
 }
 
 function bindApp(){
