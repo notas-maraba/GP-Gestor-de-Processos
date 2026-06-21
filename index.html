@@ -946,7 +946,7 @@ function rProc(){
     +'<td style="font-family:var(--mono);font-size:11px">'+ex(fp.matriculas||"---")+'</td>'
     +'<td class="text-sm text-muted">'+fd(fp.dataAbertura)+'</td>'
     +'<td class="text-sm">'+(fp.dataAssinatura?'<span style="color:'+(asp?"var(--green)":"inherit")+';font-weight:'+(asp?"600":"400")+'">'+fd(fp.dataAssinatura)+(asp?" &#128197;":"")+'</span>':"---")+'</td>'
-    +'<td><span class="status-badge '+fs.cls+'">'+fs.label+'</span>'+(fd2>3?' <span class="stale-badge">&#9888;'+fd2+'d</span>':"")+'</td>'
+    +'<td><span class="status-badge '+fs.cls+'">'+fs.label+'</span>'+(fd2>3?' <span class="stale-badge">&#9888;'+fd2+'d</span>':"")+(function(){if(fp.status==="minutando"){if(fp.minutadoPorNome){var mu=getUserById(fp.minutadoPor);return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer" data-resp-jump="'+(fp.minutadoPor||'')+'">'+avBadge(fp.minutadoPorNome,mu?mu.photo:null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(fp.minutadoPorNome.split(" ")[0])+'</span></div>';}return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem responsavel</div>';}if(fp.status==="conferindo"){if(fp.conferidoPorNome){var cu=getUserById(fp.conferidoPor);return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer" data-resp-jump="'+(fp.conferidoPor||'')+'">'+avBadge(fp.conferidoPorNome,cu?cu.photo:null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(fp.conferidoPorNome.split(" ")[0])+'</span></div>';}return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem responsavel</div>';}return '';})()+'</td>'
     +'<td><div style="display:flex;align-items:center;gap:5px"><div style="width:40px;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:'+fpg.pct+'%;height:100%;background:'+(fpg.pct===100?"var(--green)":"var(--accent)")+'"></div></div><span class="text-xs text-muted">'+fpg.done+"/"+fpg.total+'</span></div></td>'
     +'<td class="no-print"><div class="flex gap-sm">'
     +'<button class="btn btn-info btn-sm" data-rs="'+fp.id+'" title="Resumo rapido"><i class="ti ti-eye"></i></button>'
@@ -1246,7 +1246,7 @@ function rProd(){
       var u=rows[ri];
       var emMaos=emMaosMap[u.id]?emMaosMap[u.id].length:0;
       var alerta=emMaos>=10;
-      h2+='<tr style="border-bottom:1px solid var(--border)'+(alerta?';background:#fef3c7':'')+'">';
+      h2+='<tr data-user-row="'+u.id+'" style="border-bottom:1px solid var(--border)'+(alerta?';background:#fef3c7':'')+'">';
       h2+='<td style="padding:7px 10px">'+avBadge(u.name,u.photo,24)+' <span style="margin-left:6px;font-weight:600">'+ex(u.name)+'</span>'+(alerta?' <i class="ti ti-alert-triangle" style="color:#d97706" title="Carga alta"></i>':'')+'</td>';
       h2+='<td style="padding:7px 10px;text-align:center;font-weight:700;font-size:14px">'+emMaos+'</td>';
       h2+='<td style="padding:7px 10px;text-align:center">'+(concluidosHojeMap[u.id]||0)+'</td>';
@@ -7822,6 +7822,27 @@ function bindApp(){
         .catch(function(e){ssy(false);toast('Erro: '+e.message,'error');});
     };
   })(delNatBtns[dni]);
+  // Jump to responsible person's workload panel
+  document.querySelectorAll('[data-resp-jump]').forEach(function(el){
+    el.onclick=function(e){
+      e.stopPropagation();
+      var uid=el.dataset.respJump;
+      if(!uid)return;
+      A.page="produtividade";
+      A.highlightUser=uid;
+      render();
+      setTimeout(function(){
+        var target=document.querySelector('[data-user-row="'+uid+'"]');
+        if(target){
+          target.scrollIntoView({behavior:"smooth",block:"center"});
+          target.style.transition="background .3s";
+          target.style.background="#fef3c7";
+          setTimeout(function(){target.style.background="";},2000);
+        }
+      },150);
+    };
+  });
+
   // Chat button in process list
   var chatBtns=document.querySelectorAll('[data-chat]');
   for(var chi2=0;chi2<chatBtns.length;chi2++)(function(btn){
