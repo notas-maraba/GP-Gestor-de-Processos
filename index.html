@@ -16,6 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -1495,7 +1496,12 @@ function mNovo(){
   +'<div class="field col-span-2" style="display:flex;align-items:center;gap:.75rem;background:var(--surface2);padding:.75rem;border-radius:var(--r);border:1px solid var(--border)">'
   +'<input type="checkbox" id="fPago" style="width:18px;height:18px;accent-color:var(--accent)"'+(savedPago?' checked':'')+'>'
   +'<label for="fPago" style="font-size:14px;font-weight:600;cursor:pointer">Pagamento recebido / quitado</label></div>'
-  +'</div><div id="nErr"></div></div>'
+  +'</div>'
+  +'<div style="padding:.75rem 1rem;background:var(--surface2);border-top:1px solid var(--border);display:flex;align-items:center;gap:.6rem">'
+  +'<input type="checkbox" id="fAcompCliente" style="width:16px;height:16px;cursor:pointer">'
+  +'<label for="fAcompCliente" style="font-size:13px;cursor:pointer;user-select:none"><i class="ti ti-qrcode"></i> Gerar QR Code para acompanhamento do cliente</label>'
+  +'</div>'
+  +'<div id="nErr"></div></div>'
   +'<div class="modal-footer"><button class="btn btn-secondary" id="cm2">Cancelar</button><button class="btn btn-primary" id="bSvP"><i class="ti ti-check"></i> Salvar</button></div></div>';
 }
 
@@ -1596,6 +1602,10 @@ function tDados(p){
   +'<div class="field col-span-2" style="display:flex;align-items:center;gap:.75rem;background:var(--surface2);padding:.75rem;border-radius:var(--r);border:1px solid var(--border)">'
   +'<input type="checkbox" id="epPago" style="width:18px;height:18px;accent-color:var(--accent)"'+(p.pago?" checked":"")+'>'
   +'<label for="epPago" style="font-size:14px;font-weight:600;cursor:pointer">Pagamento recebido / quitado</label></div>'
+  +'<div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">'
+  +'<input type="checkbox" id="epAcompCliente" style="width:16px;height:16px;cursor:pointer"'+(p.acompCliente?" checked":"")+'>'
+  +'<label for="epAcompCliente" style="font-size:13px;cursor:pointer"><i class="ti ti-qrcode"></i> Gerar QR Code para acompanhamento do cliente</label>'
+  +'</div>'
   +'</div><div style="margin-top:1rem;text-align:right"><button class="btn btn-primary" id="bSvE"><i class="ti ti-device-floppy"></i> Salvar</button></div>';
 }
 
@@ -1799,7 +1809,12 @@ function mCapa(){
       +'<br><span style="font-size:9px;color:#555">'+escCargo+'</span>'
       +'<br><br>Maraba-PA, '+dataStr
       +'</div>'
-      +'</div>';
+      +'</div>'
+      +(p.acompCliente?'<div class="qr-section no-print" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px dashed #cbd5e1;display:flex;align-items:center;gap:12px">'
+      +'<div id="qrCodeCapa" style="width:80px;height:80px;flex-shrink:0"></div>'
+      +'<div><div style="font-size:11px;font-weight:700;color:#1a3a5c;margin-bottom:3px">Acompanhamento pelo cliente</div>'
+      +'<div style="font-size:10px;color:#64748b">Escaneie o QR Code para acompanhar<br>o andamento deste protocolo</div></div>'
+      +'</div>':"");
   })()
   +'</div></div></div>';
 }
@@ -8823,6 +8838,7 @@ function bindModal(){
     for(var ei=0;ei<A.processes.length;ei++)if(A.processes[ei].protocol===pr){document.getElementById("nErr").innerHTML='<div class="error-msg">Protocolo ja existe.</div>';return;}
     bSvPEl.disabled=true;
     var pago=document.getElementById("fPago").checked;
+    var acompCliente=document.getElementById("fAcompCliente")?document.getElementById("fAcompCliente").checked:false;
     var pgInfo=document.getElementById("fPgInfo").value.trim();
     var mEl=document.getElementById("fMa"),dsEl=document.getElementById("fDs"),vlEl=document.getElementById("fVl");
     var np={id:"p"+Date.now()+Math.random().toString(36).slice(2,6),protocol:pr,natureza:na,
@@ -8842,7 +8858,7 @@ function bindModal(){
         });
         return v;
       })(),
-      pago:pago,pgInfo:pgInfo,priority:false,
+      pago:pago,pgInfo:pgInfo,acompCliente:acompCliente,priority:false,
       status:"cadastrado",statusHistory:[{status:"cadastrado",by:A.user.id,at:new Date().toISOString()}],
       createdBy:A.user.id,createdAt:new Date().toISOString(),checklist:icl(na),comments:[],extraItems:[],extraChecked:{},hiddenItems:{}};
     // Check 4+ protocols on same date
@@ -9010,8 +9026,9 @@ function bindModal(){
     var epNatEl=document.getElementById("epNat");if(epNatEl&&epNatEl.value)upd.natureza=epNatEl.value;
     var epPgInfoEl=document.getElementById("epPgInfo");if(epPgInfoEl)upd.pgInfo=epPgInfoEl.value.trim();
     var epPagoEl=document.getElementById("epPago");if(epPagoEl)upd.pago=epPagoEl.checked;
+    var epAcEl=document.getElementById("epAcompCliente");if(epAcEl)upd.acompCliente=epAcEl.checked;
     upd.updatedBy=A.user.id;upd.updatedAt=new Date().toISOString();bSvEEl.disabled=true;
-    var cf={protocol:upd.protocol,natureza:upd.natureza,matriculas:upd.matriculas,dataAbertura:upd.dataAbertura,dataAssinatura:upd.dataAssinatura,responsavel:upd.responsavel,valor:upd.valor,pgInfo:upd.pgInfo,pago:upd.pago,enotariado:(upd.enotariado||false),enotariadoFone:(upd.enotariadoFone||""),updatedBy:upd.updatedBy,updatedAt:upd.updatedAt};
+    var cf={protocol:upd.protocol,natureza:upd.natureza,matriculas:upd.matriculas,dataAbertura:upd.dataAbertura,dataAssinatura:upd.dataAssinatura,responsavel:upd.responsavel,valor:upd.valor,pgInfo:upd.pgInfo,pago:upd.pago,acompCliente:(upd.acompCliente||false),enotariado:(upd.enotariado||false),enotariadoFone:(upd.enotariadoFone||""),updatedBy:upd.updatedBy,updatedAt:upd.updatedAt};
     ssy(true);db.collection("processes").doc(p.id).update(cf).then(function(){ssy(false);A.sel=upd;for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=upd;break;}ov.innerHTML=gMH();bindModal();toast("Dados salvos!");});
   };
   var bSvPtEl=document.getElementById("bSvPt");
@@ -9187,6 +9204,17 @@ function bindModal(){
   };})(restoreSecs[rsi]);
 
   var bPrtEl=document.getElementById("bPrt");if(bPrtEl)bPrtEl.onclick=function(){A.modal="capa";ov.innerHTML=gMH();bindModal();};
+  // Generate QR code when capa opens
+  if(A.modal==="capa"&&A.sel){
+    setTimeout(function(){
+      var qrEl=document.getElementById("qrCodeCapa");
+      if(qrEl&&window.QRCode){
+        qrEl.innerHTML="";
+        var statusUrl="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?p="+encodeURIComponent(A.sel.protocol||A.sel.id);
+        new QRCode(qrEl,{text:statusUrl,width:80,height:80,colorDark:"#1a3a5c",colorLight:"#ffffff"});
+      }
+    },100);
+  }
   var bSvUEl=document.getElementById("bSvU");
   if(bSvUEl)bSvUEl.onclick=function(){
     if(A.user.role!=="supervisor"){toast("Apenas supervisor pode criar usuarios.","error");return;}

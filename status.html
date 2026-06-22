@@ -3,158 +3,153 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Acompanhamento de Protocolo — 1º Tabelionato de Notas e Registro de Imóveis de Marabá</title>
+<title>Acompanhamento — 1º Tabelionato Marabá</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh;}
-  .header{background:#1a3a5c;color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem;}
-  .header img{height:48px;width:48px;object-fit:contain;border-radius:6px;background:#fff;padding:3px;}
-  .header-text h1{font-size:14px;font-weight:700;line-height:1.3;}
-  .header-text p{font-size:11px;opacity:.75;margin-top:2px;}
-  .container{max-width:600px;margin:1.5rem auto;padding:0 1rem 2rem;}
-  .card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:1rem;overflow:hidden;}
-  .card-header{background:#1a3a5c;color:#fff;padding:.75rem 1rem;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;}
-  .card-body{padding:1rem;}
-  .row{display:flex;justify-content:space-between;align-items:flex-start;padding:.4rem 0;border-bottom:1px solid #f1f5f9;font-size:13px;gap:8px;}
-  .row:last-child{border-bottom:none;}
-  .row-label{color:#64748b;font-size:12px;min-width:110px;flex-shrink:0;}
-  .row-value{font-weight:600;text-align:right;word-break:break-word;}
-  .status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;}
-  /* Progress bar */
-  .progress-wrap{margin:1rem 0 .5rem;}
-  .steps{display:flex;align-items:center;justify-content:space-between;position:relative;}
-  .steps::before{content:'';position:absolute;top:16px;left:0;right:0;height:3px;background:#e2e8f0;z-index:0;}
-  .step{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative;z-index:1;}
-  .step-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:3px solid #e2e8f0;background:#fff;transition:all .3s;}
-  .step-dot.done{background:#16a34a;border-color:#16a34a;color:#fff;}
-  .step-dot.current{background:#1a3a5c;border-color:#1a3a5c;color:#fff;box-shadow:0 0 0 4px rgba(26,58,92,.15);}
-  .step-dot.pending{background:#fff;border-color:#cbd5e1;color:#94a3b8;}
-  .step-label{font-size:9px;text-align:center;color:#64748b;line-height:1.2;max-width:60px;}
-  .step-label.current{color:#1a3a5c;font-weight:700;}
-  .message-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#1e40af;margin-top:.75rem;line-height:1.5;}
-  .message-box.success{background:#f0fdf4;border-color:#bbf7d0;color:#166534;}
-  .message-box.warning{background:#fffbeb;border-color:#fde68a;color:#92400e;}
-  /* Checklist */
-  .check-item{display:flex;align-items:center;gap:8px;padding:.4rem 0;font-size:13px;border-bottom:1px solid #f8fafc;}
-  .check-item:last-child{border-bottom:none;}
-  .check-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;}
-  .check-icon.ok{background:#dcfce7;color:#16a34a;}
-  .check-icon.pend{background:#fee2e2;color:#dc2626;}
-  .section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:.75rem 0 .4rem;padding-bottom:.25rem;border-bottom:2px solid #f1f5f9;}
-  .last-update{text-align:center;font-size:11px;color:#94a3b8;margin-top:1rem;}
-  .loading{text-align:center;padding:3rem 1rem;color:#64748b;}
-  .error{text-align:center;padding:3rem 1rem;color:#dc2626;}
-  .not-found{text-align:center;padding:3rem 1rem;}
-  .not-found h2{font-size:18px;font-weight:700;margin-bottom:.5rem;}
-  .not-found p{color:#64748b;font-size:13px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh;}
+.header{background:#1a3a5c;color:#fff;padding:1rem 1.25rem;}
+.header h1{font-size:14px;font-weight:700;line-height:1.4;}
+.header p{font-size:11px;opacity:.7;margin-top:3px;}
+.container{max-width:600px;margin:1.25rem auto;padding:0 1rem 3rem;}
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:1rem;overflow:hidden;}
+.card-header{background:#1a3a5c;color:#fff;padding:.65rem 1rem;font-size:13px;font-weight:700;}
+.card-body{padding:1rem;}
+.row{display:flex;justify-content:space-between;align-items:flex-start;padding:.45rem 0;border-bottom:1px solid #f1f5f9;font-size:13px;gap:8px;}
+.row:last-child{border-bottom:none;}
+.lbl{color:#64748b;font-size:12px;min-width:110px;flex-shrink:0;}
+.val{font-weight:600;text-align:right;word-break:break-word;}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+/* Steps */
+.steps-wrap{overflow-x:auto;padding-bottom:.5rem;}
+.steps{display:flex;align-items:flex-start;position:relative;min-width:340px;}
+.steps::before{content:'';position:absolute;top:15px;left:16px;right:16px;height:3px;background:#e2e8f0;z-index:0;}
+.step{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative;z-index:1;}
+.dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:3px solid #e2e8f0;background:#fff;}
+.dot.done{background:#16a34a;border-color:#16a34a;color:#fff;}
+.dot.current{background:#1a3a5c;border-color:#1a3a5c;color:#fff;box-shadow:0 0 0 4px rgba(26,58,92,.15);}
+.dot.pend{color:#94a3b8;}
+.slbl{font-size:9px;text-align:center;color:#64748b;line-height:1.2;max-width:56px;}
+.slbl.current{color:#1a3a5c;font-weight:700;}
+.msg{border-radius:8px;padding:.75rem 1rem;font-size:13px;margin-top:.75rem;line-height:1.5;}
+.msg.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;}
+.msg.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;}
+.msg.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;}
+/* Checklist */
+.sec-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:.75rem 0 .35rem;padding-bottom:.25rem;border-bottom:2px solid #f1f5f9;}
+.ci{display:flex;align-items:center;gap:8px;padding:.35rem 0;font-size:13px;border-bottom:1px solid #f8fafc;}
+.ci:last-child{border-bottom:none;}
+.cico{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;}
+.cico.ok{background:#dcfce7;color:#16a34a;}
+.cico.nd{background:#fee2e2;color:#dc2626;}
+.foot{text-align:center;font-size:11px;color:#94a3b8;margin-top:1rem;line-height:1.7;}
+.center{text-align:center;padding:3rem 1rem;}
+.center h2{font-size:17px;font-weight:700;margin-bottom:.5rem;}
+.center p{color:#64748b;font-size:13px;line-height:1.6;}
+.err-detail{margin-top:.75rem;background:#fee2e2;border-radius:8px;padding:.6rem .8rem;font-size:11px;color:#991b1b;font-family:monospace;}
 </style>
 </head>
 <body>
-
 <div class="header">
-  <div class="header-text">
-    <h1>1º Tabelionato de Notas e Registro de Imóveis de Marabá-PA</h1>
-    <p>Acompanhamento de Protocolo</p>
-  </div>
+  <h1>1º Tabelionato de Notas e Registro de Imóveis de Marabá-PA</h1>
+  <p>Acompanhamento de Protocolo</p>
 </div>
-
 <div class="container" id="app">
-  <div class="loading">⏳ Carregando informações do protocolo...</div>
+  <div class="center"><p>⏳ Carregando...</p></div>
 </div>
-
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script>
-var FB={apiKey:"AIzaSyDTWQhhjKg5-aBagrNR3fJyfT_NkFELgr8",authDomain:"cartorio-maraba.firebaseapp.com",projectId:"cartorio-maraba"};
+// Firebase config
+var FB={
+  apiKey:"AIzaSyDTWQhhjKg5-aBagrNR3fJyfT_NkFELgr8",
+  authDomain:"cartorio-maraba.firebaseapp.com",
+  projectId:"cartorio-maraba"
+};
 firebase.initializeApp(FB);
 var db=firebase.firestore();
+// Enable offline persistence so cached data works
+db.enablePersistence({synchronizeTabs:false}).catch(function(){});
 
 var STS=[
-  {key:"cadastrado",  label:"Cadastrado",          step:1,bg:"#e0e7ff",color:"#3730a3"},
-  {key:"minutando",   label:"Minutando",            step:2,bg:"#fef9c3",color:"#854d0e"},
-  {key:"para_conferir",label:"Para Conferir",       step:2,bg:"#ffedd5",color:"#9a3412"},
-  {key:"conferindo",  label:"Conferindo",           step:3,bg:"#dbeafe",color:"#1e40af"},
-  {key:"aguard_assinatura",label:"Aguardando Assinatura",step:4,bg:"#f3e8ff",color:"#6b21a8"},
-  {key:"assinado",    label:"Assinado",             step:4,bg:"#dcfce7",color:"#166534"},
-  {key:"registro",    label:"Em Registro",          step:5,bg:"#e0f2fe",color:"#0369a1"},
-  {key:"concluido",   label:"Concluído",            step:5,bg:"#dcfce7",color:"#166534"},
+  {key:"cadastrado",      label:"Cadastrado",           step:1,bg:"#e0e7ff",color:"#3730a3"},
+  {key:"minutando",       label:"Minutando",             step:2,bg:"#fef9c3",color:"#854d0e"},
+  {key:"para_conferir",   label:"Para Conferir",         step:2,bg:"#ffedd5",color:"#9a3412"},
+  {key:"conferindo",      label:"Conferindo",            step:3,bg:"#dbeafe",color:"#1e40af"},
+  {key:"aguard_assinatura",label:"Aguard. Assinatura",   step:4,bg:"#f3e8ff",color:"#6b21a8"},
+  {key:"assinado",        label:"Assinado",              step:4,bg:"#dcfce7",color:"#166534"},
+  {key:"registro",        label:"Em Registro",           step:5,bg:"#e0f2fe",color:"#0369a1"},
+  {key:"concluido",       label:"Concluído",             step:5,bg:"#dcfce7",color:"#166534"},
 ];
-
 var STEPS=[
-  {key:"cadastrado",   label:"Cadastrado"},
-  {key:"minutando",    label:"Minutando"},
-  {key:"conferindo",   label:"Conferindo"},
-  {key:"aguard_assinatura", label:"Aguard.\nAssinatura"},
-  {key:"registro",     label:"Registrando"},
+  {key:"cadastrado",        label:"Cadastrado"},
+  {key:"minutando",         label:"Minutando"},
+  {key:"conferindo",        label:"Conferindo"},
+  {key:"aguard_assinatura", label:"Aguard.\nAssin."},
+  {key:"registro",          label:"Registrando"},
 ];
-
-var MESSAGES={
-  cadastrado:"Seu processo foi recebido e está aguardando início da preparação pela nossa equipe.",
-  minutando:"Seu processo está sendo preparado (minutado) pela nossa equipe. Em breve estará pronto para conferência.",
-  para_conferir:"A minuta do seu processo foi concluída e está na fila para revisão.",
-  conferindo:"Seu processo está passando por revisão técnica para garantir que tudo está correto.",
-  aguard_assinatura:"✅ Seu processo está pronto! Entre em contato com o cartório para agendar a data de assinatura.",
-  assinado:"Seu processo foi assinado! Agora está sendo encaminhado para registro.",
-  registro:"Seu processo assinado está em fase de registro. Em breve será concluído.",
-  concluido:"🎉 Seu processo foi concluído com sucesso! Entre em contato para retirar seus documentos.",
-};
-
-var MSG_TYPE={
-  cadastrado:"",minutando:"",para_conferir:"",conferindo:"",
-  aguard_assinatura:"success",assinado:"",registro:"",concluido:"success",
+var MSGS={
+  cadastrado:  {txt:"Seu processo foi recebido e registrado. Em breve nossa equipe iniciará a preparação.", cls:"info"},
+  minutando:   {txt:"Seu processo está sendo preparado (minutado) pela nossa equipe. Em breve estará pronto para revisão.", cls:"info"},
+  para_conferir:{txt:"A preparação foi concluída e seu processo aguarda revisão técnica.", cls:"info"},
+  conferindo:  {txt:"Seu processo está passando por revisão técnica detalhada para garantir que tudo está correto.", cls:"info"},
+  aguard_assinatura:{txt:"✅ Seu processo está pronto para assinatura! Entre em contato com o cartório para agendar.", cls:"ok"},
+  assinado:    {txt:"Seu processo foi assinado e está sendo encaminhado para registro.", cls:"info"},
+  registro:    {txt:"⏳ Seu processo assinado está em fase de registro final. Em breve será concluído.", cls:"warn"},
+  concluido:   {txt:"🎉 Processo concluído com sucesso! Entre em contato com o cartório para retirar seus documentos.", cls:"ok"},
 };
 
 function gs(k){for(var i=0;i<STS.length;i++)if(STS[i].key===k)return STS[i];return STS[0];}
-function fd(s){if(!s)return"---";var d=new Date(s);return d.toLocaleDateString("pt-BR");}
-function fdt(s){if(!s)return"---";var d=new Date(s);return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}
-function ex(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function ex(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function fd(s){if(!s)return null;try{return new Date(s).toLocaleDateString("pt-BR");}catch(e){return s;}}
+function fdt(s){if(!s)return null;try{return new Date(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return s;}}
 
-function getStepIndex(statusKey){
-  var s=gs(statusKey);
-  var step=s.step||1;
-  // Map step number to STEPS array index
-  if(step===1)return 0;
-  if(step===2)return 1;
-  if(step===3)return 2;
-  if(step===4)return 3;
-  if(step===5)return 4;
-  return 0;
+function stepIndex(status){
+  var s=gs(status);
+  var n=s.step||1;
+  return n<=1?0:n===2?1:n===3?2:n===4?3:4;
 }
 
-function renderPage(proc, checklists){
+function render(proc,checklists){
   var p=proc;
   var status=p.status||"cadastrado";
   var s=gs(status);
-  var nat=p.natureza||"";
-  var currentStep=getStepIndex(status);
+  var curStep=stepIndex(status);
+  var msgObj=MSGS[status]||{txt:"Seu processo está em andamento.",cls:"info"};
 
-  // Build partes (names only, no CPF)
-  var partes=p.partes||{};
-  var transmitentes=[], adquirentes=[];
-  var groups=["Transmitente","Adquirente","Outorgante","Outorgado","Partes","Testador","Herdeiro","Parte"];
-
-  // Try transmitentes/adquirentes direct fields first
-  if(p.transmitentes&&p.transmitentes.length){
-    p.transmitentes.forEach(function(t){if(t.n)transmitentes.push(t.n);});
-  } else if(partes[0]&&partes[0].length){
-    partes[0].forEach(function(pt){if(pt.n)transmitentes.push(pt.n);});
+  // Partes names only
+  function namesOf(arr){
+    if(!arr||!arr.length)return[];
+    return arr.map(function(x){return x.n||x.name||"";}).filter(Boolean);
   }
-  if(p.adquirentes&&p.adquirentes.length){
-    p.adquirentes.forEach(function(a){if(a.n)adquirentes.push(a.n);});
-  } else if(partes[1]&&partes[1].length){
-    partes[1].forEach(function(pt){if(pt.n)adquirentes.push(pt.n);});
-  }
+  var transm=namesOf(p.transmitentes);
+  var adq=namesOf(p.adquirentes);
+  // Fallback to partes object
+  if(!transm.length&&p.partes&&p.partes[0])transm=namesOf(p.partes[0]);
+  if(!adq.length&&p.partes&&p.partes[1])adq=namesOf(p.partes[1]);
 
-  // Build checklist
-  var cl=checklists[nat]||null;
-  var pres=[], pend=[];
-  var hiddenCapa=p.hiddenItems||{};
-  if(cl&&p.checklist){
+  // Steps bar
+  var stHtml='<div class="steps-wrap"><div class="steps">';
+  for(var i=0;i<STEPS.length;i++){
+    var done=i<curStep, cur=i===curStep;
+    var dc=done?"done":cur?"current":"pend";
+    var lc=cur?" current":"";
+    stHtml+='<div class="step"><div class="dot '+dc+'">'+(done?"✓":(i+1))+'</div>'
+      +'<div class="slbl'+lc+'">'+STEPS[i].label+'</div></div>';
+  }
+  stHtml+='</div></div>';
+
+  // Checklist
+  var cl=checklists[p.natureza||""];
+  var pres=[],pend=[];
+  var hidden=p.hiddenItems||{};
+  if(cl&&p.checklist&&cl.sections){
     for(var si=0;si<cl.sections.length;si++){
-      for(var ii=0;ii<cl.sections[si].items.length;ii++){
-        if(hiddenCapa[si+"_"+ii])continue;
-        if(p.checklist[si]&&p.checklist[si][ii])pres.push(cl.sections[si].items[ii]);
-        else pend.push(cl.sections[si].items[ii]);
+      var sec=cl.sections[si];
+      if(!sec||!sec.items)continue;
+      for(var ii=0;ii<sec.items.length;ii++){
+        if(hidden[si+"_"+ii])continue;
+        if(p.checklist[si]&&p.checklist[si][ii])pres.push(sec.items[ii]);
+        else pend.push(sec.items[ii]);
       }
     }
   }
@@ -164,92 +159,94 @@ function renderPage(proc, checklists){
     else pend.push(extras[ei]);
   }
 
-  // Steps progress bar
-  var stepsHtml='<div class="steps">';
-  for(var si2=0;si2<STEPS.length;si2++){
-    var isDone=si2<currentStep;
-    var isCurrent=si2===currentStep;
-    var dotClass=isDone?"done":isCurrent?"current":"pending";
-    var labelClass=isCurrent?"current":"";
-    stepsHtml+='<div class="step">'
-      +'<div class="step-dot '+dotClass+'">'+(isDone?"✓":(si2+1))+'</div>'
-      +'<div class="step-label '+labelClass+'">'+STEPS[si2].label+'</div>'
-      +'</div>';
-  }
-  stepsHtml+='</div>';
+  var h="";
 
-  // Message
-  var msg=MESSAGES[status]||"Seu processo está em andamento.";
-  var msgType=MSG_TYPE[status]||"";
-
-  var html='';
-
-  // Protocol info card
-  html+='<div class="card">'
-    +'<div class="card-header">📋 Protocolo '+ex(p.protocol||"")+'</div>'
-    +'<div class="card-body">'
-    +'<div class="row"><span class="row-label">Natureza</span><span class="row-value">'+ex(p.natureza||"---")+'</span></div>'
-    +(transmitentes.length?'<div class="row"><span class="row-label">Transmitente(s)</span><span class="row-value">'+transmitentes.map(ex).join("<br>")+'</span></div>':'')
-    +(adquirentes.length?'<div class="row"><span class="row-label">Adquirente(s)</span><span class="row-value">'+adquirentes.map(ex).join("<br>")+'</span></div>':'')
-    +(p.matriculas?'<div class="row"><span class="row-label">Matrícula(s)</span><span class="row-value">'+ex(p.matriculas)+'</span></div>':'')
-    +(p.dataAssinatura?'<div class="row"><span class="row-label">Data de Assinatura</span><span class="row-value" style="color:#1a3a5c;font-size:14px">📅 '+fd(p.dataAssinatura)+'</span></div>':'')
-    +'<div class="row"><span class="row-label">Status atual</span><span class="row-value"><span class="status-badge" style="background:'+s.bg+';color:'+s.color+'">'+s.label+'</span></span></div>'
-    +'</div></div>';
+  // Info card
+  h+='<div class="card"><div class="card-header">📋 Protocolo '+ex(p.protocol||"")+'</div><div class="card-body">';
+  h+='<div class="row"><span class="lbl">Natureza</span><span class="val">'+ex(p.natureza||"---")+'</span></div>';
+  if(transm.length)h+='<div class="row"><span class="lbl">Transmitente(s)</span><span class="val">'+transm.map(ex).join("<br>")+'</span></div>';
+  if(adq.length)h+='<div class="row"><span class="lbl">Adquirente(s)</span><span class="val">'+adq.map(ex).join("<br>")+'</span></div>';
+  if(p.matriculas)h+='<div class="row"><span class="lbl">Matrícula(s)</span><span class="val">'+ex(p.matriculas)+'</span></div>';
+  if(p.dataAssinatura){var dAs=fd(p.dataAssinatura);if(dAs)h+='<div class="row"><span class="lbl">Data de Assinatura</span><span class="val" style="color:#1a3a5c">📅 '+ex(dAs)+'</span></div>';}
+  h+='<div class="row"><span class="lbl">Status</span><span class="val"><span class="badge" style="background:'+s.bg+';color:'+s.color+'">'+s.label+'</span></span></div>';
+  h+='</div></div>';
 
   // Progress card
-  html+='<div class="card">'
-    +'<div class="card-header">📍 Caminho do Processo</div>'
-    +'<div class="card-body">'
-    +'<div class="progress-wrap">'+stepsHtml+'</div>'
-    +'<div class="message-box '+msgType+'">'+ex(msg)+'</div>'
-    +'</div></div>';
+  h+='<div class="card"><div class="card-header">📍 Caminho do Processo</div><div class="card-body">';
+  h+=stHtml;
+  h+='<div class="msg '+msgObj.cls+'">'+ex(msgObj.txt)+'</div>';
+  h+='</div></div>';
 
   // Checklist card
   if(pres.length||pend.length){
-    html+='<div class="card">'
-      +'<div class="card-header">📄 Documentos</div>'
-      +'<div class="card-body">';
+    h+='<div class="card"><div class="card-header">📄 Documentos</div><div class="card-body">';
     if(pres.length){
-      html+='<div class="section-title">✅ Documentos apresentados ('+pres.length+')</div>';
-      pres.forEach(function(item){
-        html+='<div class="check-item"><div class="check-icon ok">✓</div><span>'+ex(item)+'</span></div>';
-      });
+      h+='<div class="sec-title">✅ Apresentados ('+pres.length+')</div>';
+      pres.forEach(function(it){h+='<div class="ci"><div class="cico ok">✓</div><span>'+ex(it)+'</span></div>';});
     }
     if(pend.length){
-      html+='<div class="section-title" style="color:#dc2626">⏳ Documentos pendentes ('+pend.length+')</div>';
-      pend.forEach(function(item){
-        html+='<div class="check-item"><div class="check-icon pend">✗</div><span>'+ex(item)+'</span></div>';
-      });
+      h+='<div class="sec-title" style="color:#dc2626">⏳ Pendentes ('+pend.length+')</div>';
+      pend.forEach(function(it){h+='<div class="ci"><div class="cico nd">✗</div><span>'+ex(it)+'</span></div>';});
     }
-    html+='</div></div>';
+    h+='</div></div>';
   }
 
-  html+='<div class="last-update">Última atualização: '+fdt(p.updatedAt||p.createdAt||"")+'</div>';
-  html+='<div class="last-update" style="margin-top:.5rem">1º Tabelionato de Notas e Registro de Imóveis de Marabá-PA<br>(94) 3324-0000</div>';
+  var upd=fdt(p.updatedAt||p.createdAt);
+  h+='<div class="foot">'+(upd?'Última atualização: '+ex(upd)+'<br>':'');
+  h+='1º Tabelionato de Notas e Registro de Imóveis de Marabá-PA</div>';
 
-  document.getElementById("app").innerHTML=html;
+  document.getElementById("app").innerHTML=h;
 }
 
-// Load from Firebase
+// Load protocol
 var params=new URLSearchParams(window.location.search);
-var protocol=params.get("p");
+var protocol=params.get("p")||params.get("protocolo");
 
 if(!protocol){
-  document.getElementById("app").innerHTML='<div class="not-found"><h2>❌ Protocolo não informado</h2><p>Este link é inválido. Por favor, escaneie o QR Code na capa do seu processo.</p></div>';
+  document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link inválido</h2><p>Este link não contém um número de protocolo.<br>Escaneie o QR Code na capa do seu processo.</p></div>';
 } else {
-  db.collection("processes").where("protocol","==",String(protocol)).get().then(function(snap){
-    if(snap.empty){
-      document.getElementById("app").innerHTML='<div class="not-found"><h2>❌ Protocolo não encontrado</h2><p>Não encontramos o protocolo <strong>'+ex(protocol)+'</strong>.<br>Verifique o número ou entre em contato com o cartório.</p></div>';
-      return;
-    }
-    var proc=snap.docs[0].data();
-    db.collection("config").doc("checklists").get().then(function(cs){
-      var checklists=cs.exists?(cs.data().data||{}):{};
-      renderPage(proc, checklists);
+  // Try loading - handle permission errors with clear message
+  db.collection("processes").where("protocol","==",String(protocol)).limit(1).get()
+    .then(function(snap){
+      if(snap.empty){
+        // Try with number
+        return db.collection("processes").where("protocol","==",Number(protocol)).limit(1).get()
+          .then(function(snap2){
+            if(snap2.empty)return null;
+            return snap2;
+          });
+      }
+      return snap;
+    })
+    .then(function(snap){
+      if(!snap||snap.empty){
+        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Protocolo não encontrado</h2><p>Não encontramos o protocolo <strong>'+ex(protocol)+'</strong>.<br><br>Verifique o número ou entre em contato com o cartório.</p></div>';
+        return;
+      }
+      var proc=snap.docs[0].data();
+      db.collection("config").doc("checklists").get()
+        .then(function(cs){
+          var cls=cs.exists?(cs.data().data||{}):{};
+          render(proc,cls);
+        })
+        .catch(function(){
+          // Render without checklist if it fails
+          render(proc,{});
+        });
+    })
+    .catch(function(e){
+      var isPermission=e.code==="permission-denied"||e.message.indexOf("permission")>=0||e.message.indexOf("PERMISSION")>=0;
+      if(isPermission){
+        document.getElementById("app").innerHTML='<div class="center">'
+          +'<h2>🔒 Acesso bloqueado</h2>'
+          +'<p>O sistema ainda não está configurado para acesso público.<br><br>'
+          +'<strong>Para o responsável do cartório:</strong> acesse o Firebase Console → Firestore → Regras e adicione permissão de leitura pública para a coleção <code>processes</code>.</p>'
+          +'<div class="err-detail">'+ex(e.message)+'</div>'
+          +'</div>';
+      } else {
+        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Erro ao carregar</h2><p>'+ex(e.message)+'</p></div>';
+      }
     });
-  }).catch(function(e){
-    document.getElementById("app").innerHTML='<div class="error">❌ Erro ao carregar: '+ex(e.message)+'</div>';
-  });
 }
 </script>
 </body>
