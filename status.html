@@ -189,22 +189,36 @@ var token=params.get("t");
 if(!token){
   document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link inválido</h2><p>Este link não é válido.<br>Escaneie o QR Code na capa do seu processo.</p></div>';
 } else {
-  // Query by token — only processes with matching tokenAcomp are returned
-  db.collection("processes")
-    .where("tokenAcomp","==",token)
-    .limit(1)
-    .get()
-    .then(function(snap){
-      if(snap.empty){
-        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link não encontrado</h2><p>Este link não corresponde a nenhum processo.<br>Verifique se escaneou o QR Code correto ou entre em contato com o cartório.</p></div>';
+  // Step 1: load token doc by ID (direct read, no query needed)
+  db.collection("tokens").doc(token).get()
+    .then(function(tokenDoc){
+      if(!tokenDoc.exists){
+        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link não encontrado</h2><p>Este link não é válido ou foi desativado.<br>Verifique se escaneou o QR Code correto ou entre em contato com o cartório.</p></div>';
         return;
       }
-      var proc=snap.docs[0].data();
-      db.collection("config").doc("checklists").get()
-        .then(function(cs){
-          render(proc, cs.exists?(cs.data().data||{}):{});
+      var processId=tokenDoc.data().processId;
+      if(!processId){
+        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link inválido</h2><p>Entre em contato com o cartório.</p></div>';
+        return;
+      }
+      // Step 2: load process by ID (also direct read)
+      db.collection("processes").doc(processId).get()
+        .then(function(procDoc){
+          if(!procDoc.exists){
+            document.getElementById("app").innerHTML='<div class="center"><h2>❌ Processo não encontrado</h2><p>Entre em contato com o cartório.</p></div>';
+            return;
+          }
+          var proc=procDoc.data();
+          // Step 3: load checklists
+          db.collection("config").doc("checklists").get()
+            .then(function(cs){
+              render(proc, cs.exists?(cs.data().data||{}):{});
+            })
+            .catch(function(){render(proc,{});});
         })
-        .catch(function(){render(proc,{});});
+        .catch(function(e){
+          document.getElementById("app").innerHTML='<div class="center"><h2>❌ Erro</h2><p>'+ex(e.message)+'</p></div>';
+        });
     })
     .catch(function(e){
       document.getElementById("app").innerHTML='<div class="center"><h2>❌ Erro</h2><p>'+ex(e.message)+'</p></div>';
