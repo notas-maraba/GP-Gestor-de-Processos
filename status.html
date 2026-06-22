@@ -81,14 +81,14 @@ var STEPS=[
   {key:"registro",          label:"Registrando"},
 ];
 var MSGS={
-  cadastrado:   {t:"Seu processo foi recebido e registrado. Em breve nossa equipe iniciará a preparação.",c:"info"},
-  minutando:    {t:"Seu processo está sendo preparado pela nossa equipe. Em breve estará pronto para revisão.",c:"info"},
-  para_conferir:{t:"A preparação foi concluída e seu processo aguarda revisão técnica.",c:"info"},
-  conferindo:   {t:"Seu processo está passando por revisão técnica detalhada.",c:"info"},
+  cadastrado:    {t:"Seu processo foi recebido e registrado. Em breve nossa equipe iniciará a preparação.",c:"info"},
+  minutando:     {t:"Seu processo está sendo preparado pela nossa equipe. Em breve estará pronto para revisão.",c:"info"},
+  para_conferir: {t:"A preparação foi concluída e seu processo aguarda revisão técnica.",c:"info"},
+  conferindo:    {t:"Seu processo está passando por revisão técnica detalhada.",c:"info"},
   aguard_assinatura:{t:"✅ Seu processo está pronto para assinatura! Entre em contato com o cartório para agendar.",c:"ok"},
-  assinado:     {t:"Seu processo foi assinado e está sendo encaminhado para registro.",c:"info"},
-  registro:     {t:"⏳ Seu processo assinado está em fase de registro final.",c:"warn"},
-  concluido:    {t:"🎉 Processo concluído! Entre em contato com o cartório para retirar seus documentos.",c:"ok"},
+  assinado:      {t:"Seu processo foi assinado e está sendo encaminhado para registro.",c:"info"},
+  registro:      {t:"⏳ Seu processo assinado está em fase de registro final.",c:"warn"},
+  concluido:     {t:"🎉 Processo concluído! Entre em contato com o cartório para retirar seus documentos.",c:"ok"},
 };
 
 function gs(k){for(var i=0;i<STS.length;i++)if(STS[i].key===k)return STS[i];return STS[0];}
@@ -97,60 +97,34 @@ function fd(s){if(!s)return null;try{return new Date(s).toLocaleDateString("pt-B
 function fdt(s){if(!s)return null;try{return new Date(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return s;}}
 function stepIdx(status){var s=gs(status);var n=s.step||1;return n<=1?0:n===2?1:n===3?2:n===4?3:4;}
 
-function render(proc,checklists){
-  var p=proc;
-  var status=p.status||"cadastrado";
+function render(d){
+  // d = token document data (already contains everything needed)
+  var status=d.status||"cadastrado";
   var s=gs(status);
   var cur=stepIdx(status);
   var m=MSGS[status]||{t:"Seu processo está em andamento.",c:"info"};
 
-  function names(arr){
-    if(!arr||!arr.length)return[];
-    return arr.map(function(x){return x.n||x.name||"";}).filter(Boolean);
-  }
-  var transm=names(p.transmitentes);
-  var adq=names(p.adquirentes);
-  if(!transm.length&&p.partes&&p.partes[0])transm=names(p.partes[0]);
-  if(!adq.length&&p.partes&&p.partes[1])adq=names(p.partes[1]);
-
-  // Steps
+  // Steps bar
   var stH='<div class="steps-wrap"><div class="steps">';
   for(var i=0;i<STEPS.length;i++){
     var done=i<cur,isCur=i===cur;
-    stH+='<div class="step"><div class="dot '+(done?"done":isCur?"current":"pend")+'">'+(done?"✓":(i+1))+'</div>'
+    stH+='<div class="step"><div class="dot '+(done?"done":isCur?"current":"pend")+'">'
+      +(done?"✓":(i+1))+'</div>'
       +'<div class="slbl'+(isCur?" current":"")+'">'+STEPS[i].label+'</div></div>';
   }
   stH+='</div></div>';
 
-  // Checklist
-  var cl=checklists[p.natureza||""];
-  var pres=[],pend=[];
-  var hidden=p.hiddenItems||{};
-  if(cl&&p.checklist&&cl.sections){
-    for(var si=0;si<cl.sections.length;si++){
-      var sec=cl.sections[si];
-      if(!sec||!sec.items)continue;
-      for(var ii=0;ii<sec.items.length;ii++){
-        if(hidden[si+"_"+ii])continue;
-        if(p.checklist[si]&&p.checklist[si][ii])pres.push(sec.items[ii]);
-        else pend.push(sec.items[ii]);
-      }
-    }
-  }
-  var extras=p.extraItems||[];
-  for(var ei=0;ei<extras.length;ei++){
-    (p.extraChecked&&p.extraChecked[ei]?pres:pend).push(extras[ei]);
-  }
-
   var h="";
 
   // Info card
-  h+='<div class="card"><div class="card-header">📋 Protocolo '+ex(p.protocol||"")+'</div><div class="card-body">';
-  h+='<div class="row"><span class="lbl">Natureza</span><span class="val">'+ex(p.natureza||"---")+'</span></div>';
-  if(transm.length)h+='<div class="row"><span class="lbl">Transmitente(s)</span><span class="val">'+transm.map(ex).join("<br>")+'</span></div>';
-  if(adq.length)h+='<div class="row"><span class="lbl">Adquirente(s)</span><span class="val">'+adq.map(ex).join("<br>")+'</span></div>';
-  if(p.matriculas)h+='<div class="row"><span class="lbl">Matrícula(s)</span><span class="val">'+ex(p.matriculas)+'</span></div>';
-  var dAs=fd(p.dataAssinatura);
+  h+='<div class="card"><div class="card-header">📋 Protocolo '+ex(d.protocol||"")+'</div><div class="card-body">';
+  h+='<div class="row"><span class="lbl">Natureza</span><span class="val">'+ex(d.natureza||"---")+'</span></div>';
+  var tr=d.transmitentes||[];
+  var ad=d.adquirentes||[];
+  if(tr.length)h+='<div class="row"><span class="lbl">Transmitente(s)</span><span class="val">'+tr.map(ex).join("<br>")+'</span></div>';
+  if(ad.length)h+='<div class="row"><span class="lbl">Adquirente(s)</span><span class="val">'+ad.map(ex).join("<br>")+'</span></div>';
+  if(d.matriculas)h+='<div class="row"><span class="lbl">Matrícula(s)</span><span class="val">'+ex(d.matriculas)+'</span></div>';
+  var dAs=fd(d.dataAssinatura);
   if(dAs)h+='<div class="row"><span class="lbl">Data de Assinatura</span><span class="val" style="color:#1a3a5c">📅 '+ex(dAs)+'</span></div>';
   h+='<div class="row"><span class="lbl">Status</span><span class="val"><span class="badge" style="background:'+s.bg+';color:'+s.color+'">'+s.label+'</span></span></div>';
   h+='</div></div>';
@@ -162,6 +136,8 @@ function render(proc,checklists){
   h+='</div></div>';
 
   // Checklist card
+  var pres=d.checklistPres||[];
+  var pend=d.checklistPend||[];
   if(pres.length||pend.length){
     h+='<div class="card"><div class="card-header">📄 Documentos</div><div class="card-body">';
     if(pres.length){
@@ -175,50 +151,27 @@ function render(proc,checklists){
     h+='</div></div>';
   }
 
-  var upd=fdt(p.updatedAt||p.createdAt);
+  var upd=fdt(d.updatedAt);
   h+='<div class="foot">'+(upd?'Última atualização: '+ex(upd)+'<br>':'')
     +'1º Tabelionato de Notas e Registro de Imóveis de Marabá-PA</div>';
 
   document.getElementById("app").innerHTML=h;
 }
 
-// Get token from URL
-var params=new URLSearchParams(window.location.search);
-var token=params.get("t");
+// Get token and load ONLY from tokens/ collection
+var token=(new URLSearchParams(window.location.search)).get("t");
 
 if(!token){
-  document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link inválido</h2><p>Este link não é válido.<br>Escaneie o QR Code na capa do seu processo.</p></div>';
+  document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link inválido</h2><p>Escaneie o QR Code na capa do seu processo.</p></div>';
 } else {
-  // Step 1: load token doc by ID (direct read, no query needed)
+  // Single read from tokens/ — no auth required
   db.collection("tokens").doc(token).get()
-    .then(function(tokenDoc){
-      if(!tokenDoc.exists){
-        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link não encontrado</h2><p>Este link não é válido ou foi desativado.<br>Verifique se escaneou o QR Code correto ou entre em contato com o cartório.</p></div>';
+    .then(function(doc){
+      if(!doc.exists){
+        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link não encontrado</h2><p>Este link não é válido ou foi desativado.<br>Entre em contato com o cartório.</p></div>';
         return;
       }
-      var processId=tokenDoc.data().processId;
-      if(!processId){
-        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link inválido</h2><p>Entre em contato com o cartório.</p></div>';
-        return;
-      }
-      // Step 2: load process by ID (also direct read)
-      db.collection("processes").doc(processId).get()
-        .then(function(procDoc){
-          if(!procDoc.exists){
-            document.getElementById("app").innerHTML='<div class="center"><h2>❌ Processo não encontrado</h2><p>Entre em contato com o cartório.</p></div>';
-            return;
-          }
-          var proc=procDoc.data();
-          // Step 3: load checklists
-          db.collection("config").doc("checklists").get()
-            .then(function(cs){
-              render(proc, cs.exists?(cs.data().data||{}):{});
-            })
-            .catch(function(){render(proc,{});});
-        })
-        .catch(function(e){
-          document.getElementById("app").innerHTML='<div class="center"><h2>❌ Erro</h2><p>'+ex(e.message)+'</p></div>';
-        });
+      render(doc.data());
     })
     .catch(function(e){
       document.getElementById("app").innerHTML='<div class="center"><h2>❌ Erro</h2><p>'+ex(e.message)+'</p></div>';

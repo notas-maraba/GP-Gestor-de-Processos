@@ -7805,6 +7805,49 @@ function startSheetAutoSync(){
   },15*60*1000);
 }
 
+function buildTokenData(p, checklists){
+  // Build checklist snapshot
+  var cl=checklists[p.natureza||""];
+  var pres=[],pend=[];
+  var hidden=p.hiddenItems||{};
+  if(cl&&p.checklist&&cl.sections){
+    for(var si=0;si<cl.sections.length;si++){
+      var sec=cl.sections[si];
+      if(!sec||!sec.items)continue;
+      for(var ii=0;ii<sec.items.length;ii++){
+        if(hidden[si+"_"+ii])continue;
+        if(p.checklist[si]&&p.checklist[si][ii])pres.push(sec.items[ii]);
+        else pend.push(sec.items[ii]);
+      }
+    }
+  }
+  var extras=p.extraItems||[];
+  for(var ei=0;ei<extras.length;ei++){
+    (p.extraChecked&&p.extraChecked[ei]?pres:pend).push(extras[ei]);
+  }
+
+  // Names only (no CPF)
+  function names(arr){
+    if(!arr||!arr.length)return[];
+    return arr.map(function(x){return x.n||x.name||"";}).filter(Boolean);
+  }
+
+  return {
+    processId: p.id,
+    protocol:  p.protocol||"",
+    natureza:  p.natureza||"",
+    status:    p.status||"cadastrado",
+    transmitentes: names(p.transmitentes||(p.partes&&p.partes[0])||[]),
+    adquirentes:   names(p.adquirentes||(p.partes&&p.partes[1])||[]),
+    matriculas:    p.matriculas||"",
+    dataAssinatura:p.dataAssinatura||"",
+    updatedAt:     p.updatedAt||p.createdAt||new Date().toISOString(),
+    checklistPres: pres,
+    checklistPend: pend,
+    createdAt:     new Date().toISOString()
+  };
+}
+
 function gerarTokenAcomp(){
   var chars='abcdefghijkmnpqrstuvwxyz23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   var token='';
@@ -8880,11 +8923,11 @@ function bindModal(){
     }
     ssy(true);db.collection("processes").doc(np.id).set(np,{merge:true}).then(function(){
       ssy(false);
-      // Save token doc for public status page lookup
+      // Save token doc with all public data (so status.html only reads tokens/)
       if(np.acompCliente&&np.tokenAcomp){
-        db.collection("tokens").doc(np.tokenAcomp).set({
-          processId:np.id,protocol:np.protocol,createdAt:new Date().toISOString()
-        });
+        db.collection("tokens").doc(np.tokenAcomp).set(
+          buildTokenData(np, A.checklists||{})
+        );
       }
       A.sel=np;A.tab="dados";A.epartes={};A.modal="ver";ov.remove();render();renderModal();toast("Protocolo "+pr+" criado!");
     });
@@ -9004,7 +9047,12 @@ function bindModal(){
     var nowIso2=new Date().toISOString();
     if(p.status==="minutando")advUpd.minutadoFimEm=nowIso2;
     if(p.status==="conferindo")advUpd.conferidoFimEm=nowIso2;
-    ssy(true);db.collection("processes").doc(p.id).update(advUpd).then(function(){ssy(false);Object.assign(p,advUpd);for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}ov.innerHTML=gMH();bindModal();toast("Avancado para: "+nx.label);});
+    ssy(true);db.collection("processes").doc(p.id).update(advUpd).then(function(){
+        ssy(false);Object.assign(p,advUpd);
+        for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
+        if(p.acompCliente&&p.tokenAcomp)db.collection("tokens").doc(p.tokenAcomp).set(buildTokenData(p,A.checklists||{}));
+        ov.innerHTML=gMH();bindModal();toast("Avancado para: "+nx.label);
+      });
   };
   var bDevolverEl=document.getElementById("bDevolverPend");
   if(bDevolverEl)bDevolverEl.onclick=function(){
@@ -9050,10 +9098,9 @@ function bindModal(){
       // Generate token if turning ON for the first time; keep existing if already has one
       if(nowAcomp&&!p.tokenAcomp){
         upd.tokenAcomp=gerarTokenAcomp();
-        // Save token doc
-        db.collection("tokens").doc(upd.tokenAcomp).set({
-          processId:p.id,protocol:p.protocol,createdAt:new Date().toISOString()
-        });
+        // Save token doc with all public data
+        var snapData=buildTokenData(Object.assign({},p,upd), A.checklists||{});
+        db.collection("tokens").doc(upd.tokenAcomp).set(snapData);
       }
       if(nowAcomp&&p.tokenAcomp)upd.tokenAcomp=p.tokenAcomp;
       if(!nowAcomp){
