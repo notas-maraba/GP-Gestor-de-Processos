@@ -7805,6 +7805,14 @@ function startSheetAutoSync(){
   },15*60*1000);
 }
 
+function refreshTokenIfNeeded(p){
+  if(p&&p.acompCliente&&p.tokenAcomp){
+    // Always get latest process data from A.processes
+    var latest=p;
+    for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){latest=A.processes[i];break;}
+    db.collection("tokens").doc(latest.tokenAcomp).set(buildTokenData(latest,A.checklists||{}));
+  }
+}
 function buildTokenData(p, checklists){
   // Build checklist snapshot
   var cl=checklists[p.natureza||""];
@@ -8511,6 +8519,7 @@ function bindModal(){
         for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
         A.modal=null;A.pendingAdvance=null;
         if(ov)ov.remove();
+        refreshTokenIfNeeded(p);
         toast("Avancado para "+nx.label+" — Responsavel: "+respName);
         render();
       }).catch(function(err){
@@ -8576,6 +8585,7 @@ function bindModal(){
         ssy(false);
         Object.assign(p,upd);
         for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
+        refreshTokenIfNeeded(p);
         A.modal=null;
         if(ov)ov.remove();
         toast("Protocolo devolvido para Minutando com pendencias.");
@@ -9050,7 +9060,7 @@ function bindModal(){
     ssy(true);db.collection("processes").doc(p.id).update(advUpd).then(function(){
         ssy(false);Object.assign(p,advUpd);
         for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
-        if(p.acompCliente&&p.tokenAcomp)db.collection("tokens").doc(p.tokenAcomp).set(buildTokenData(p,A.checklists||{}));
+        refreshTokenIfNeeded(p);
         ov.innerHTML=gMH();bindModal();toast("Avancado para: "+nx.label);
       });
   };
@@ -9068,6 +9078,7 @@ function bindModal(){
     ssy(true);db.collection("processes").doc(p.id).update({status:prv.key,statusHistory:hist}).then(function(){
       ssy(false);p.status=prv.key;p.statusHistory=hist;
       for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
+      refreshTokenIfNeeded(p);
       ov.innerHTML=gMH();bindModal();toast("Voltou para: "+prv.label);
     });
   };
@@ -9111,7 +9122,7 @@ function bindModal(){
     }
     upd.updatedBy=A.user.id;upd.updatedAt=new Date().toISOString();bSvEEl.disabled=true;
     var cf={protocol:upd.protocol,natureza:upd.natureza,matriculas:upd.matriculas,dataAbertura:upd.dataAbertura,dataAssinatura:upd.dataAssinatura,responsavel:upd.responsavel,valor:upd.valor,pgInfo:upd.pgInfo,pago:upd.pago,acompCliente:(upd.acompCliente||false),tokenAcomp:(upd.tokenAcomp||""),enotariado:(upd.enotariado||false),enotariadoFone:(upd.enotariadoFone||""),updatedBy:upd.updatedBy,updatedAt:upd.updatedAt};
-    ssy(true);db.collection("processes").doc(p.id).update(cf).then(function(){ssy(false);A.sel=upd;for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=upd;break;}ov.innerHTML=gMH();bindModal();toast("Dados salvos!");});
+    ssy(true);db.collection("processes").doc(p.id).update(cf).then(function(){ssy(false);A.sel=upd;for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=upd;break;}refreshTokenIfNeeded(upd);ov.innerHTML=gMH();bindModal();toast("Dados salvos!");});
   };
   var bSvPtEl=document.getElementById("bSvPt");
   if(bSvPtEl)bSvPtEl.onclick=function(){
@@ -9126,7 +9137,7 @@ function bindModal(){
     upd.partes=partes;upd.transmitentes=partes[0]||[];upd.adquirentes=partes[1]||[];
     upd.updatedBy=A.user.id;upd.updatedAt=new Date().toISOString();
     var parteFields={partes:upd.partes,transmitentes:upd.transmitentes,adquirentes:upd.adquirentes,updatedBy:upd.updatedBy,updatedAt:upd.updatedAt};
-    bSvPtEl.disabled=true;ssy(true);db.collection("processes").doc(p.id).update(parteFields).then(function(){ssy(false);A.sel=upd;A.epartes={};for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=upd;break;}ov.innerHTML=gMH();bindModal();toast("Partes salvas!");});
+    bSvPtEl.disabled=true;ssy(true);db.collection("processes").doc(p.id).update(parteFields).then(function(){ssy(false);A.sel=upd;A.epartes={};for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=upd;break;}refreshTokenIfNeeded(upd);ov.innerHTML=gMH();bindModal();toast("Partes salvas!");});
   };
   var chks=ov.querySelectorAll("input[type=checkbox][data-si]");
   for(var chi=0;chi<chks.length;chi++)(function(el){el.onchange=function(e){
@@ -9145,6 +9156,7 @@ function bindModal(){
     ssy(true);
     db.collection("processes").doc(p.id).update({checklist:p.checklist}).then(function(){
       ssy(false);for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
+      refreshTokenIfNeeded(p);
     });
   };})(chks[chi]);
   var bACEl=document.getElementById("bAC");
