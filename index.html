@@ -16,7 +16,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -1800,11 +1799,6 @@ function mCapa(){
       +'<br><span style="font-size:9px;color:#555">'+escCargo+'</span>'
       +'<br><br>Maraba-PA, '+dataStr
       +'</div>'
-      +'</div>'
-      +'<div class="qr-section no-print" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;border:1px dashed #cbd5e1;display:flex;align-items:center;gap:12px">'
-      +'<div id="qrCodeCapa" style="width:80px;height:80px;flex-shrink:0"></div>'
-      +'<div><div style="font-size:11px;font-weight:700;color:#1a3a5c;margin-bottom:3px">Acompanhamento pelo cliente</div>'
-      +'<div style="font-size:10px;color:#64748b">Escaneie o QR Code para acompanhar<br>o andamento deste protocolo</div></div>'
       +'</div>';
   })()
   +'</div></div></div>';
@@ -9193,17 +9187,6 @@ function bindModal(){
   };})(restoreSecs[rsi]);
 
   var bPrtEl=document.getElementById("bPrt");if(bPrtEl)bPrtEl.onclick=function(){A.modal="capa";ov.innerHTML=gMH();bindModal();};
-  // Generate QR code when capa opens
-  if(A.modal==="capa"&&A.sel){
-    setTimeout(function(){
-      var qrEl=document.getElementById("qrCodeCapa");
-      if(qrEl&&window.QRCode){
-        qrEl.innerHTML="";
-        var statusUrl="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?p="+encodeURIComponent(A.sel.protocol||A.sel.id);
-        new QRCode(qrEl,{text:statusUrl,width:80,height:80,colorDark:"#1a3a5c",colorLight:"#ffffff"});
-      }
-    },100);
-  }
   var bSvUEl=document.getElementById("bSvU");
   if(bSvUEl)bSvUEl.onclick=function(){
     if(A.user.role!=="supervisor"){toast("Apenas supervisor pode criar usuarios.","error");return;}
