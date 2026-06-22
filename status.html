@@ -19,9 +19,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-heig
 .lbl{color:#64748b;font-size:12px;min-width:110px;flex-shrink:0;}
 .val{font-weight:600;text-align:right;word-break:break-word;}
 .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
-/* Steps */
 .steps-wrap{overflow-x:auto;padding-bottom:.5rem;}
-.steps{display:flex;align-items:flex-start;position:relative;min-width:340px;}
+.steps{display:flex;align-items:flex-start;position:relative;min-width:320px;}
 .steps::before{content:'';position:absolute;top:15px;left:16px;right:16px;height:3px;background:#e2e8f0;z-index:0;}
 .step{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative;z-index:1;}
 .dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:3px solid #e2e8f0;background:#fff;}
@@ -34,7 +33,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-heig
 .msg.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;}
 .msg.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;}
 .msg.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;}
-/* Checklist */
 .sec-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:.75rem 0 .35rem;padding-bottom:.25rem;border-bottom:2px solid #f1f5f9;}
 .ci{display:flex;align-items:center;gap:8px;padding:.35rem 0;font-size:13px;border-bottom:1px solid #f8fafc;}
 .ci:last-child{border-bottom:none;}
@@ -45,7 +43,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-heig
 .center{text-align:center;padding:3rem 1rem;}
 .center h2{font-size:17px;font-weight:700;margin-bottom:.5rem;}
 .center p{color:#64748b;font-size:13px;line-height:1.6;}
-.err-detail{margin-top:.75rem;background:#fee2e2;border-radius:8px;padding:.6rem .8rem;font-size:11px;color:#991b1b;font-family:monospace;}
 </style>
 </head>
 <body>
@@ -59,26 +56,22 @@ body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-heig
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script>
-// Firebase config
-var FB={
+firebase.initializeApp({
   apiKey:"AIzaSyDTWQhhjKg5-aBagrNR3fJyfT_NkFELgr8",
   authDomain:"cartorio-maraba.firebaseapp.com",
   projectId:"cartorio-maraba"
-};
-firebase.initializeApp(FB);
+});
 var db=firebase.firestore();
-// Enable offline persistence so cached data works
-db.enablePersistence({synchronizeTabs:false}).catch(function(){});
 
 var STS=[
-  {key:"cadastrado",      label:"Cadastrado",           step:1,bg:"#e0e7ff",color:"#3730a3"},
-  {key:"minutando",       label:"Minutando",             step:2,bg:"#fef9c3",color:"#854d0e"},
-  {key:"para_conferir",   label:"Para Conferir",         step:2,bg:"#ffedd5",color:"#9a3412"},
-  {key:"conferindo",      label:"Conferindo",            step:3,bg:"#dbeafe",color:"#1e40af"},
-  {key:"aguard_assinatura",label:"Aguard. Assinatura",   step:4,bg:"#f3e8ff",color:"#6b21a8"},
-  {key:"assinado",        label:"Assinado",              step:4,bg:"#dcfce7",color:"#166534"},
-  {key:"registro",        label:"Em Registro",           step:5,bg:"#e0f2fe",color:"#0369a1"},
-  {key:"concluido",       label:"Concluído",             step:5,bg:"#dcfce7",color:"#166534"},
+  {key:"cadastrado",        label:"Cadastrado",          step:1,bg:"#e0e7ff",color:"#3730a3"},
+  {key:"minutando",         label:"Minutando",            step:2,bg:"#fef9c3",color:"#854d0e"},
+  {key:"para_conferir",     label:"Para Conferir",        step:2,bg:"#ffedd5",color:"#9a3412"},
+  {key:"conferindo",        label:"Conferindo",           step:3,bg:"#dbeafe",color:"#1e40af"},
+  {key:"aguard_assinatura", label:"Aguard. Assinatura",   step:4,bg:"#f3e8ff",color:"#6b21a8"},
+  {key:"assinado",          label:"Assinado",             step:4,bg:"#dcfce7",color:"#166534"},
+  {key:"registro",          label:"Em Registro",          step:5,bg:"#e0f2fe",color:"#0369a1"},
+  {key:"concluido",         label:"Concluído",            step:5,bg:"#dcfce7",color:"#166534"},
 ];
 var STEPS=[
   {key:"cadastrado",        label:"Cadastrado"},
@@ -88,55 +81,46 @@ var STEPS=[
   {key:"registro",          label:"Registrando"},
 ];
 var MSGS={
-  cadastrado:  {txt:"Seu processo foi recebido e registrado. Em breve nossa equipe iniciará a preparação.", cls:"info"},
-  minutando:   {txt:"Seu processo está sendo preparado (minutado) pela nossa equipe. Em breve estará pronto para revisão.", cls:"info"},
-  para_conferir:{txt:"A preparação foi concluída e seu processo aguarda revisão técnica.", cls:"info"},
-  conferindo:  {txt:"Seu processo está passando por revisão técnica detalhada para garantir que tudo está correto.", cls:"info"},
-  aguard_assinatura:{txt:"✅ Seu processo está pronto para assinatura! Entre em contato com o cartório para agendar.", cls:"ok"},
-  assinado:    {txt:"Seu processo foi assinado e está sendo encaminhado para registro.", cls:"info"},
-  registro:    {txt:"⏳ Seu processo assinado está em fase de registro final. Em breve será concluído.", cls:"warn"},
-  concluido:   {txt:"🎉 Processo concluído com sucesso! Entre em contato com o cartório para retirar seus documentos.", cls:"ok"},
+  cadastrado:   {t:"Seu processo foi recebido e registrado. Em breve nossa equipe iniciará a preparação.",c:"info"},
+  minutando:    {t:"Seu processo está sendo preparado pela nossa equipe. Em breve estará pronto para revisão.",c:"info"},
+  para_conferir:{t:"A preparação foi concluída e seu processo aguarda revisão técnica.",c:"info"},
+  conferindo:   {t:"Seu processo está passando por revisão técnica detalhada.",c:"info"},
+  aguard_assinatura:{t:"✅ Seu processo está pronto para assinatura! Entre em contato com o cartório para agendar.",c:"ok"},
+  assinado:     {t:"Seu processo foi assinado e está sendo encaminhado para registro.",c:"info"},
+  registro:     {t:"⏳ Seu processo assinado está em fase de registro final.",c:"warn"},
+  concluido:    {t:"🎉 Processo concluído! Entre em contato com o cartório para retirar seus documentos.",c:"ok"},
 };
 
 function gs(k){for(var i=0;i<STS.length;i++)if(STS[i].key===k)return STS[i];return STS[0];}
-function ex(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function ex(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function fd(s){if(!s)return null;try{return new Date(s).toLocaleDateString("pt-BR");}catch(e){return s;}}
 function fdt(s){if(!s)return null;try{return new Date(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return s;}}
-
-function stepIndex(status){
-  var s=gs(status);
-  var n=s.step||1;
-  return n<=1?0:n===2?1:n===3?2:n===4?3:4;
-}
+function stepIdx(status){var s=gs(status);var n=s.step||1;return n<=1?0:n===2?1:n===3?2:n===4?3:4;}
 
 function render(proc,checklists){
   var p=proc;
   var status=p.status||"cadastrado";
   var s=gs(status);
-  var curStep=stepIndex(status);
-  var msgObj=MSGS[status]||{txt:"Seu processo está em andamento.",cls:"info"};
+  var cur=stepIdx(status);
+  var m=MSGS[status]||{t:"Seu processo está em andamento.",c:"info"};
 
-  // Partes names only
-  function namesOf(arr){
+  function names(arr){
     if(!arr||!arr.length)return[];
     return arr.map(function(x){return x.n||x.name||"";}).filter(Boolean);
   }
-  var transm=namesOf(p.transmitentes);
-  var adq=namesOf(p.adquirentes);
-  // Fallback to partes object
-  if(!transm.length&&p.partes&&p.partes[0])transm=namesOf(p.partes[0]);
-  if(!adq.length&&p.partes&&p.partes[1])adq=namesOf(p.partes[1]);
+  var transm=names(p.transmitentes);
+  var adq=names(p.adquirentes);
+  if(!transm.length&&p.partes&&p.partes[0])transm=names(p.partes[0]);
+  if(!adq.length&&p.partes&&p.partes[1])adq=names(p.partes[1]);
 
-  // Steps bar
-  var stHtml='<div class="steps-wrap"><div class="steps">';
+  // Steps
+  var stH='<div class="steps-wrap"><div class="steps">';
   for(var i=0;i<STEPS.length;i++){
-    var done=i<curStep, cur=i===curStep;
-    var dc=done?"done":cur?"current":"pend";
-    var lc=cur?" current":"";
-    stHtml+='<div class="step"><div class="dot '+dc+'">'+(done?"✓":(i+1))+'</div>'
-      +'<div class="slbl'+lc+'">'+STEPS[i].label+'</div></div>';
+    var done=i<cur,isCur=i===cur;
+    stH+='<div class="step"><div class="dot '+(done?"done":isCur?"current":"pend")+'">'+(done?"✓":(i+1))+'</div>'
+      +'<div class="slbl'+(isCur?" current":"")+'">'+STEPS[i].label+'</div></div>';
   }
-  stHtml+='</div></div>';
+  stH+='</div></div>';
 
   // Checklist
   var cl=checklists[p.natureza||""];
@@ -155,8 +139,7 @@ function render(proc,checklists){
   }
   var extras=p.extraItems||[];
   for(var ei=0;ei<extras.length;ei++){
-    if(p.extraChecked&&p.extraChecked[ei])pres.push(extras[ei]);
-    else pend.push(extras[ei]);
+    (p.extraChecked&&p.extraChecked[ei]?pres:pend).push(extras[ei]);
   }
 
   var h="";
@@ -167,14 +150,15 @@ function render(proc,checklists){
   if(transm.length)h+='<div class="row"><span class="lbl">Transmitente(s)</span><span class="val">'+transm.map(ex).join("<br>")+'</span></div>';
   if(adq.length)h+='<div class="row"><span class="lbl">Adquirente(s)</span><span class="val">'+adq.map(ex).join("<br>")+'</span></div>';
   if(p.matriculas)h+='<div class="row"><span class="lbl">Matrícula(s)</span><span class="val">'+ex(p.matriculas)+'</span></div>';
-  if(p.dataAssinatura){var dAs=fd(p.dataAssinatura);if(dAs)h+='<div class="row"><span class="lbl">Data de Assinatura</span><span class="val" style="color:#1a3a5c">📅 '+ex(dAs)+'</span></div>';}
+  var dAs=fd(p.dataAssinatura);
+  if(dAs)h+='<div class="row"><span class="lbl">Data de Assinatura</span><span class="val" style="color:#1a3a5c">📅 '+ex(dAs)+'</span></div>';
   h+='<div class="row"><span class="lbl">Status</span><span class="val"><span class="badge" style="background:'+s.bg+';color:'+s.color+'">'+s.label+'</span></span></div>';
   h+='</div></div>';
 
   // Progress card
   h+='<div class="card"><div class="card-header">📍 Caminho do Processo</div><div class="card-body">';
-  h+=stHtml;
-  h+='<div class="msg '+msgObj.cls+'">'+ex(msgObj.txt)+'</div>';
+  h+=stH;
+  h+='<div class="msg '+m.c+'">'+ex(m.t)+'</div>';
   h+='</div></div>';
 
   // Checklist card
@@ -192,60 +176,38 @@ function render(proc,checklists){
   }
 
   var upd=fdt(p.updatedAt||p.createdAt);
-  h+='<div class="foot">'+(upd?'Última atualização: '+ex(upd)+'<br>':'');
-  h+='1º Tabelionato de Notas e Registro de Imóveis de Marabá-PA</div>';
+  h+='<div class="foot">'+(upd?'Última atualização: '+ex(upd)+'<br>':'')
+    +'1º Tabelionato de Notas e Registro de Imóveis de Marabá-PA</div>';
 
   document.getElementById("app").innerHTML=h;
 }
 
-// Load protocol
+// Get token from URL
 var params=new URLSearchParams(window.location.search);
-var protocol=params.get("p")||params.get("protocolo");
+var token=params.get("t");
 
-if(!protocol){
-  document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link inválido</h2><p>Este link não contém um número de protocolo.<br>Escaneie o QR Code na capa do seu processo.</p></div>';
+if(!token){
+  document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link inválido</h2><p>Este link não é válido.<br>Escaneie o QR Code na capa do seu processo.</p></div>';
 } else {
-  // Try loading - handle permission errors with clear message
-  db.collection("processes").where("protocol","==",String(protocol)).limit(1).get()
+  // Query by token — only processes with matching tokenAcomp are returned
+  db.collection("processes")
+    .where("tokenAcomp","==",token)
+    .limit(1)
+    .get()
     .then(function(snap){
       if(snap.empty){
-        // Try with number
-        return db.collection("processes").where("protocol","==",Number(protocol)).limit(1).get()
-          .then(function(snap2){
-            if(snap2.empty)return null;
-            return snap2;
-          });
-      }
-      return snap;
-    })
-    .then(function(snap){
-      if(!snap||snap.empty){
-        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Protocolo não encontrado</h2><p>Não encontramos o protocolo <strong>'+ex(protocol)+'</strong>.<br><br>Verifique o número ou entre em contato com o cartório.</p></div>';
+        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Link não encontrado</h2><p>Este link não corresponde a nenhum processo.<br>Verifique se escaneou o QR Code correto ou entre em contato com o cartório.</p></div>';
         return;
       }
       var proc=snap.docs[0].data();
       db.collection("config").doc("checklists").get()
         .then(function(cs){
-          var cls=cs.exists?(cs.data().data||{}):{};
-          render(proc,cls);
+          render(proc, cs.exists?(cs.data().data||{}):{});
         })
-        .catch(function(){
-          // Render without checklist if it fails
-          render(proc,{});
-        });
+        .catch(function(){render(proc,{});});
     })
     .catch(function(e){
-      var isPermission=e.code==="permission-denied"||e.message.indexOf("permission")>=0||e.message.indexOf("PERMISSION")>=0;
-      if(isPermission){
-        document.getElementById("app").innerHTML='<div class="center">'
-          +'<h2>🔒 Acesso bloqueado</h2>'
-          +'<p>O sistema ainda não está configurado para acesso público.<br><br>'
-          +'<strong>Para o responsável do cartório:</strong> acesse o Firebase Console → Firestore → Regras e adicione permissão de leitura pública para a coleção <code>processes</code>.</p>'
-          +'<div class="err-detail">'+ex(e.message)+'</div>'
-          +'</div>';
-      } else {
-        document.getElementById("app").innerHTML='<div class="center"><h2>❌ Erro ao carregar</h2><p>'+ex(e.message)+'</p></div>';
-      }
+      document.getElementById("app").innerHTML='<div class="center"><h2>❌ Erro</h2><p>'+ex(e.message)+'</p></div>';
     });
 }
 </script>
