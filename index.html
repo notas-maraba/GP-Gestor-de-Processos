@@ -575,10 +575,10 @@ function startApp(){
         db.collection("users").get().then(function(s){
           A.users=s.docs.map(function(d){return d.data();});
           for(var i=0;i<A.users.length;i++){
-            if(A.users[i].authUid===fbUser.uid){A.user=A.users[i];loadCL();return;}
+            if(A.users[i].authUid===fbUser.uid){if(A.users[i].ativo===false){auth.signOut();document.getElementById('app').innerHTML='<div class="loading-screen"><div style="color:#f87171;font-size:15px"><i class="ti ti-user-off"></i> Acesso desativado.<br>Entre em contato com o supervisor.</div></div>';return;}A.user=A.users[i];loadCL();return;}
           }
           for(var j=0;j<A.users.length;j++){
-            if(A.users[j].email===fbUser.email){A.user=A.users[j];db.collection("users").doc(A.users[j].id).update({authUid:fbUser.uid});loadCL();return;}
+            if(A.users[j].email===fbUser.email){if(A.users[j].ativo===false){auth.signOut();document.getElementById('app').innerHTML='<div class="loading-screen"><div style="color:#f87171;font-size:15px"><i class="ti ti-user-off"></i> Acesso desativado.<br>Entre em contato com o supervisor.</div></div>';return;}A.user=A.users[j];db.collection("users").doc(A.users[j].id).update({authUid:fbUser.uid});loadCL();return;}
           }
           auth.signOut();
         });
@@ -1179,21 +1179,64 @@ function rCL(){
 
 function rUsers(){
   var sup=A.user.role==="supervisor";
-  var h='<div class="page-header"><div><div class="page-title">Usuarios</div></div>'+(sup?'<button class="btn btn-primary" id="bNU"><i class="ti ti-user-plus"></i> Novo</button>':"")+'</div>'
-  +'<div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Nome</th><th>Usuario</th><th>Cargo</th><th>Cadastrado</th><th>Acoes</th></tr></thead><tbody>';
-  for(var ui=0;ui<A.users.length;ui++){
-    var u=A.users[ui];
-    h+='<tr><td><div class="flex items-center gap-sm"><div class="user-badge" style="width:28px;height:28px;font-size:11px">'+ini(u.name)+'</div>'+ex(u.name)+'</div></td>'
-    +'<td style="font-family:var(--mono);font-size:12px">'+ex(u.username)+'</td>'
-    +'<td><span class="badge '+roleBadge(u.role)+'">'+roleLabel(u.role)+'</span></td>'
-    +'<td class="text-sm text-muted">'+fd(u.createdAt)+'</td>'
-    +'<td><div class="flex gap-sm">'
-    +(sup&&u.id!==A.user.id?'<button class="btn btn-secondary btn-sm" data-edituser="'+u.id+'"><i class="ti ti-edit"></i></button>':"")
-    +(sup&&u.id!==A.user.id?'<button class="btn btn-danger btn-sm" data-du="'+u.id+'"><i class="ti ti-trash"></i></button>':"")
-    +(u.id===A.user.id?'<span class="text-xs text-muted">(voce)</span>':"")
-    +'</div></td></tr>';
+  var showInactive=A.showInactiveUsers===true;
+  var users=A.users.filter(function(u){return showInactive?true:(u.ativo!==false);});
+
+  var h='<div class="page-header"><div><div class="page-title"><i class="ti ti-users" style="margin-right:.5rem"></i>Usuarios</div>'
+    +'<div class="page-subtitle">Gerencie a equipe do cartorio</div></div>'
+    +(sup?'<div style="display:flex;gap:.5rem">'
+    +'<button class="btn '+(showInactive?'btn-primary':'btn-secondary')+'" id="bToggleInactive"><i class="ti ti-eye'+(showInactive?'-off':'')+'"></i> '+(showInactive?'Ocultar inativos':'Mostrar inativos')+'</button>'
+    +'<button class="btn btn-primary" id="bNU"><i class="ti ti-user-plus"></i> Novo</button>'
+    +'</div>':"")+"</div>";
+
+  // Summary cards
+  var ativos=A.users.filter(function(u){return u.ativo!==false;}).length;
+  var inativos=A.users.filter(function(u){return u.ativo===false;}).length;
+  h+='<div style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">'
+    +'<div class="card" style="flex:1;min-width:140px;padding:.75rem 1rem">'
+    +'<div style="font-size:12px;color:var(--muted)">Ativos</div>'
+    +'<div style="font-size:22px;font-weight:700;color:var(--green)">'+ativos+'</div></div>'
+    +'<div class="card" style="flex:1;min-width:140px;padding:.75rem 1rem">'
+    +'<div style="font-size:12px;color:var(--muted)">Inativos</div>'
+    +'<div style="font-size:22px;font-weight:700;color:var(--muted)">'+inativos+'</div></div>'
+    +'</div>';
+
+  h+='<div class="card" style="padding:0;overflow:hidden">'
+    +'<table><thead><tr>'
+    +'<th>Usuario</th>'
+    +'<th>Login</th>'
+    +'<th>Cargo</th>'
+    +'<th>Status</th>'
+    +'<th>Cadastrado</th>'
+    +(sup?'<th>Acoes</th>':'')
+    +'</tr></thead><tbody>';
+
+  for(var ui=0;ui<users.length;ui++){
+    var u=users[ui];
+    var isMe=u.id===A.user.id;
+    var isInativo=u.ativo===false;
+    h+='<tr style="'+(isInativo?'opacity:.55;background:var(--surface2)':'')+'">'
+      +'<td><div style="display:flex;align-items:center;gap:8px">'
+      +avBadge(u.name,u.photo,32)
+      +'<div><div style="font-weight:600;font-size:13px">'+ex(u.name)+(isMe?' <span style="font-size:10px;color:var(--muted)">(voce)</span>':'')+'</div>'
+      +'<div style="font-size:11px;color:var(--muted)">'+ex(u.email||'')+'</div></div>'
+      +'</div></td>'
+      +'<td style="font-family:var(--mono);font-size:12px">'+ex(u.username)+'</td>'
+      +'<td><span class="badge '+roleBadge(u.role)+'">'+roleLabel(u.role)+'</span></td>'
+      +'<td>'+(isInativo
+        ?'<span style="background:#fee2e2;color:#dc2626;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700"><i class="ti ti-user-off"></i> Inativo</span>'
+        :'<span style="background:#dcfce7;color:#16a34a;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700"><i class="ti ti-user-check"></i> Ativo</span>')
+      +'</td>'
+      +'<td class="text-sm text-muted">'+fd(u.createdAt)+'</td>'
+      +(sup?'<td><div style="display:flex;gap:4px">'
+      +(!isMe?'<button class="btn btn-secondary btn-sm" data-edituser="'+u.id+'" title="Editar"><i class="ti ti-edit"></i></button>':'')
+      +(!isMe&&!isInativo?'<button class="btn btn-warning btn-sm" data-deactivate="'+u.id+'" title="Desativar acesso" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a"><i class="ti ti-user-off"></i></button>':'')
+      +(!isMe&&isInativo?'<button class="btn btn-success btn-sm" data-reactivate="'+u.id+'" title="Reativar acesso" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0"><i class="ti ti-user-check"></i></button>':'')
+      +'</div></td>':'')
+      +'</tr>';
   }
-  h+='</tbody></table></div>';return h;
+  h+='</tbody></table></div>';
+  return h;
 }
 
 function rProd(){
@@ -7454,6 +7497,7 @@ function mPickResp(){
   var roleNeeded=etapa==="minutando"?"auxiliar":"escrevente";
   // List users that can perform this role: minutando -> auxiliar+escrevente+supervisor; conferindo -> escrevente+supervisor
   var elegiveis=A.users.filter(function(u){
+    if(u.ativo===false)return false; // exclude inactive users
     if(etapa==="minutando")return ["auxiliar","escrevente","supervisor"].indexOf(u.role)>=0;
     return ["escrevente","supervisor"].indexOf(u.role)>=0;
   });
@@ -7972,8 +8016,40 @@ function bindApp(){
         toast("Senha incorreta. Exclusao cancelada.","error");
       });
   };})(dls[dli]);
-  var dus=document.querySelectorAll("[data-du]");
-  for(var dui=0;dui<dus.length;dui++)(function(btn){btn.onclick=function(){if(A.user.role!=="supervisor"){toast("Apenas supervisor pode excluir usuarios.","error");return;}if(!confirm("Excluir usuario?"))return;db.collection("users").doc(btn.dataset.du).delete().then(function(){for(var i=0;i<A.users.length;i++)if(A.users[i].id===btn.dataset.du){A.users.splice(i,1);break;}render();toast("Excluido.");});};})(dus[dui]);
+  // Toggle show inactive users
+  var bToggleIn=document.getElementById("bToggleInactive");
+  if(bToggleIn)bToggleIn.onclick=function(){A.showInactiveUsers=!A.showInactiveUsers;render();};
+
+  // Deactivate user (replaces delete)
+  document.querySelectorAll("[data-deactivate]").forEach(function(btn){
+    btn.onclick=function(){
+      var uid=btn.dataset.deactivate;
+      var u=getUserById(uid);
+      if(!u)return;
+      if(!confirm("Desativar acesso de "+u.name+"?\n\nEle nao conseguira mais logar no sistema.\nSeu historico (comentarios, processos) sera preservado."))return;
+      ssy(true);
+      db.collection("users").doc(uid).update({ativo:false,desativadoEm:new Date().toISOString(),desativadoPor:A.user.id}).then(function(){
+        for(var i=0;i<A.users.length;i++)if(A.users[i].id===uid){A.users[i].ativo=false;break;}
+        ssy(false);toast(u.name+" desativado. Historico preservado.");render();
+      }).catch(function(e){ssy(false);toast("Erro: "+e.message,"error");});
+    };
+  });
+
+  // Reactivate user
+  document.querySelectorAll("[data-reactivate]").forEach(function(btn){
+    btn.onclick=function(){
+      var uid=btn.dataset.reactivate;
+      var u=getUserById(uid);
+      if(!u)return;
+      if(!confirm("Reativar acesso de "+u.name+"?"))return;
+      ssy(true);
+      db.collection("users").doc(uid).update({ativo:true,reativadoEm:new Date().toISOString(),reativadoPor:A.user.id}).then(function(){
+        for(var i=0;i<A.users.length;i++)if(A.users[i].id===uid){A.users[i].ativo=true;break;}
+        ssy(false);toast(u.name+" reativado com sucesso!");render();
+      }).catch(function(e){ssy(false);toast("Erro: "+e.message,"error");});
+    };
+  });
+
   var ecls=document.querySelectorAll("[data-ecl]");
   for(var ecli=0;ecli<ecls.length;ecli++)(function(btn){btn.onclick=function(){if(!(A.user&&A.user.role==="supervisor"))return;A.ecl=btn.dataset.ecl;A.modal="editCl";renderModal();};})(ecls[ecli]);
   // Tabela emolumentos bindings
