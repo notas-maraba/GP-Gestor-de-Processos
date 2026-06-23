@@ -1505,7 +1505,7 @@ function mNovo(){
       h+='<span style="font-size:12px;font-weight:600;color:var(--accent);min-width:65px">Imovel '+(ii+1)+'</span>';
       h+='<input type="text" class="fVl-mat" data-vi="'+ii+'" value="'+ex(im.mat||'')+'" placeholder="Matricula" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
       h+='<span style="color:var(--muted);font-size:13px">-</span>';
-      h+='<input type="text" class="fVl-imovel money-input" data-vi="'+ii+'" value="'+ex(im.val||'')+'" placeholder="R$ 0,00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
+      h+='<input type="text" class="fVl-imovel" data-vi="'+ii+'" value="'+ex(im.val||'')+'" placeholder="R$ 0,00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
       h+=(imoveis.length>1?'<button class="btn btn-danger btn-sm" data-rem-fvl="'+ii+'"><i class="ti ti-x"></i></button>':'');
       h+='</div>';
     }
@@ -1612,7 +1612,7 @@ function tDados(p){
       h3+='<span style="font-size:12px;font-weight:600;color:var(--accent);min-width:65px">Imovel '+(iii+1)+'</span>';
       h3+='<input type="text" class="ep-imovel-mat" value="'+ex(im4.mat||'')+'" placeholder="Matricula" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
       h3+='<span style="color:var(--muted)">-</span>';
-      h3+='<input type="text" class="ep-imovel-val money-input" value="'+ex(im4.val||'')+'" placeholder="R$ 0,00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
+      h3+='<input type="text" class="ep-imovel-val" value="'+ex(im4.val||'')+'" placeholder="R$ 0,00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
       h3+=(ims.length>1?'<button class="btn btn-danger btn-sm" data-rem-epim="'+iii+'"><i class="ti ti-x"></i></button>':'');
       h3+='</div>';
     }
@@ -3075,7 +3075,7 @@ function rOrcamentos(){
     for(var ii=0;ii<imoveis.length;ii++){
       h+='<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">';
       h+='<span style="font-size:12px;color:var(--muted);min-width:70px">Imovel '+(ii+1)+':</span>';
-      h+='<input type="text" class="orc-imovel-val money-input" data-imovel-idx="'+ii+'" value="'+ex(imoveis[ii])+'" placeholder="Ex: 250.000,00" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
+      h+='<input type="text" class="orc-imovel-val" data-imovel-idx="'+ii+'" value="'+ex(imoveis[ii])+'" placeholder="Ex: 250.000,00" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
       h+=(imoveis.length>1?'<button class="btn btn-danger btn-sm" data-rem-imovel="'+ii+'"><i class="ti ti-x"></i></button>':'');
       h+='</div>';
     }
@@ -8353,7 +8353,7 @@ bindOrcRapidos();
       var div=document.createElement("div");
       div.style.cssText="display:flex;gap:6px;margin-bottom:6px;align-items:center";
       div.innerHTML='<span style="font-size:12px;color:var(--muted);min-width:70px">Imovel '+(idx+1)+':</span>'
-        +'<input type="text" class="orc-imovel-val money-input" data-imovel-idx="'+idx+'" placeholder="Ex: 250.000,00" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">'
+        +'<input type="text" class="orc-imovel-val" data-imovel-idx="'+idx+'" placeholder="Ex: 250.000,00" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">'
         +'<button class="btn btn-danger btn-sm" style="padding:3px 8px" data-rem-imovel-dyn="'+idx+'"><i class="ti ti-x"></i></button>';
       lista.appendChild(div);
       cur.push('');
