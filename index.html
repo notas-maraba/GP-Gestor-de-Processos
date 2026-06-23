@@ -1523,6 +1523,7 @@ function mNovo(){
   +'<input type="checkbox" id="fAcompCliente" style="width:16px;height:16px;cursor:pointer">'
   +'<label for="fAcompCliente" style="font-size:13px;cursor:pointer;user-select:none"><i class="ti ti-qrcode"></i> Gerar QR Code para acompanhamento do cliente</label>'
   +'</div>'
+  +'<div id="fAcompLinkInfo" style="display:none;margin-top:.4rem;padding:.5rem .75rem;background:#eff6ff;border-radius:var(--r);border:1px solid #bfdbfe;font-size:12px;color:#1e40af"><i class="ti ti-info-circle"></i> O link sera gerado ao salvar.</div>'
   +'<div id="nErr"></div></div>'
   +'<div class="modal-footer"><button class="btn btn-secondary" id="cm2">Cancelar</button><button class="btn btn-primary" id="bSvP"><i class="ti ti-check"></i> Salvar</button></div></div>';
 }
@@ -1628,6 +1629,16 @@ function tDados(p){
   +'<input type="checkbox" id="epAcompCliente" style="width:16px;height:16px;cursor:pointer"'+(p.acompCliente?" checked":"")+'>'
   +'<label for="epAcompCliente" style="font-size:13px;cursor:pointer"><i class="ti ti-qrcode"></i> Gerar QR Code para acompanhamento do cliente</label>'
   +'</div>'
+  +(p.acompCliente&&p.tokenAcomp
+    ?'<div style="margin-top:.5rem;padding:.65rem .75rem;background:#eff6ff;border-radius:var(--r);border:1px solid #bfdbfe">'
+    +'<div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:.35rem"><i class="ti ti-link"></i> Link de acompanhamento do cliente</div>'
+    +'<div style="display:flex;gap:.4rem;align-items:center">'
+    +'<input type="text" id="epAcompLinkInput" readonly data-token="'+ex(p.tokenAcomp)+'" data-short="'+ex(p.linkAcomp||'')+'" style="flex:1;font-size:11px;font-family:var(--mono);padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);background:#fff">'
+    +'<button class="btn btn-secondary btn-sm" id="bCopyAcompLink"><i class="ti ti-copy"></i> Copiar</button>'
+    +'</div>'
+    +'<div style="font-size:11px;color:#64748b;margin-top:.3rem">Envie pelo WhatsApp ou e-mail para o cliente acompanhar o processo.</div>'
+    +'</div>'
+    :"")
   +'</div><div style="margin-top:1rem;text-align:right"><button class="btn btn-primary" id="bSvE"><i class="ti ti-device-floppy"></i> Salvar</button></div>';
 }
 
@@ -7878,6 +7889,22 @@ function buildTokenData(p, checklists){
   };
 }
 
+function gerarLinkCurto(token, callback){
+  var url="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+token;
+  fetch("https://tinyurl.com/api-create.php?url="+encodeURIComponent(url))
+    .then(function(r){return r.text();})
+    .then(function(short){
+      if(short&&short.indexOf("tinyurl.com")>=0){
+        callback(short.trim());
+      } else {
+        callback(url); // fallback to full URL if TinyURL fails
+      }
+    })
+    .catch(function(){
+      callback(url); // fallback on error
+    });
+}
+
 function gerarTokenAcomp(){
   var chars='abcdefghijkmnpqrstuvwxyz23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   var token='';
@@ -8878,6 +8905,12 @@ function bindModal(){
     rebuildModal();
   };})(rps[ri]);
 
+    var fAcEl=document.getElementById("fAcompCliente");
+  var fAcInfo=document.getElementById("fAcompLinkInfo");
+  if(fAcEl&&fAcInfo){
+    fAcInfo.style.display=fAcEl.checked?"block":"none";
+    fAcEl.onchange=function(){fAcInfo.style.display=fAcEl.checked?"block":"none";};
+  }
   var bSvPEl=document.getElementById("bSvP");
   if(bSvPEl)bSvPEl.onclick=function(){
     if(A.isOnline===false){
@@ -8953,11 +8986,16 @@ function bindModal(){
     }
     ssy(true);db.collection("processes").doc(np.id).set(np,{merge:true}).then(function(){
       ssy(false);
-      // Save token doc with all public data (so status.html only reads tokens/)
+      // Save token doc and generate short link
       if(np.acompCliente&&np.tokenAcomp){
-        db.collection("tokens").doc(np.tokenAcomp).set(
-          buildTokenData(np, A.checklists||{})
-        );
+        var tokenData=buildTokenData(np,A.checklists||{});
+        db.collection("tokens").doc(np.tokenAcomp).set(tokenData);
+        // Generate short URL via TinyURL
+        gerarLinkCurto(np.tokenAcomp,function(shortUrl){
+          np.linkAcomp=shortUrl;
+          db.collection("processes").doc(np.id).update({linkAcomp:shortUrl});
+          for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===np.id){A.processes[xi].linkAcomp=shortUrl;break;}
+        });
       }
       A.sel=np;A.tab="dados";A.epartes={};A.modal="ver";ov.remove();render();renderModal();toast("Protocolo "+pr+" criado!");
     });
@@ -9100,6 +9138,29 @@ function bindModal(){
       ov.innerHTML=gMH();bindModal();toast("Voltou para: "+prv.label);
     });
   };
+  // Set link value and bind copy button
+  var epLinkInput=document.getElementById("epAcompLinkInput");
+  if(epLinkInput&&epLinkInput.dataset.token){
+    var shortLink=epLinkInput.dataset.short;
+    epLinkInput.value=(shortLink&&shortLink.indexOf("tinyurl")>=0)
+      ?shortLink
+      : + BASE_URL + +epLinkInput.dataset.token;
+  }
+  var bCopyLink=document.getElementById("bCopyAcompLink");
+  if(bCopyLink)bCopyLink.onclick=function(){
+    var txt=(document.getElementById("epAcompLinkInput")||{}).value||"";
+    if(!txt)return;
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(txt).then(function(){
+        bCopyLink.innerHTML='<i class="ti ti-check"></i> Copiado!';
+        setTimeout(function(){bCopyLink.innerHTML='<i class="ti ti-copy"></i> Copiar';},2000);
+      });
+    } else {
+      var t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();document.execCommand("copy");document.body.removeChild(t);
+      bCopyLink.innerHTML='<i class="ti ti-check"></i> Copiado!';
+      setTimeout(function(){bCopyLink.innerHTML='<i class="ti ti-copy"></i> Copiar';},2000);
+    }
+  };
   var bSvEEl=document.getElementById("bSvE");
   if(bSvEEl)bSvEEl.onclick=function(){
     var p=A.sel,upd=JSON.parse(JSON.stringify(p));
@@ -9127,9 +9188,17 @@ function bindModal(){
       // Generate token if turning ON for the first time; keep existing if already has one
       if(nowAcomp&&!p.tokenAcomp){
         upd.tokenAcomp=gerarTokenAcomp();
-        // Save token doc with all public data
+        // Save token doc with all public data + generate short link
         var snapData=buildTokenData(Object.assign({},p,upd), A.checklists||{});
         db.collection("tokens").doc(upd.tokenAcomp).set(snapData);
+        // Generate short URL if not already generated
+        if(!upd.linkAcomp){
+          gerarLinkCurto(upd.tokenAcomp,function(shortUrl){
+            upd.linkAcomp=shortUrl;
+            db.collection("processes").doc(p.id).update({linkAcomp:shortUrl});
+            for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===p.id){A.processes[xi].linkAcomp=shortUrl;break;}
+          });
+        }
       }
       if(nowAcomp&&p.tokenAcomp)upd.tokenAcomp=p.tokenAcomp;
       if(!nowAcomp){
@@ -9321,7 +9390,7 @@ function bindModal(){
       var qrEl=document.getElementById("qrCodeCapa");
       if(qrEl&&window.QRCode){
         qrEl.innerHTML="";
-        var statusUrl="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+(A.sel.tokenAcomp||encodeURIComponent(A.sel.protocol||A.sel.id));
+        var statusUrl=(A.sel.linkAcomp&&A.sel.linkAcomp.indexOf("tinyurl")>=0)?A.sel.linkAcomp:("https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+(A.sel.tokenAcomp||encodeURIComponent(A.sel.protocol||A.sel.id)));
         new QRCode(qrEl,{text:statusUrl,width:80,height:80,colorDark:"#1a3a5c",colorLight:"#ffffff"});
       }
     },100);
