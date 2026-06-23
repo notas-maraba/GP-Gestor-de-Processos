@@ -1633,7 +1633,7 @@ function tDados(p){
     ?'<div style="margin-top:.5rem;padding:.65rem .75rem;background:#eff6ff;border-radius:var(--r);border:1px solid #bfdbfe">'
     +'<div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:.35rem"><i class="ti ti-link"></i> Link de acompanhamento do cliente</div>'
     +'<div style="display:flex;gap:.4rem;align-items:center">'
-    +'<input type="text" id="epAcompLinkInput" readonly data-token="'+ex(p.tokenAcomp)+'" data-short="'+ex(p.linkAcomp||'')+'" style="flex:1;font-size:11px;font-family:var(--mono);padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);background:#fff">'
+    +'<input type="text" id="epAcompLinkInput" readonly data-token="'+ex(p.tokenAcomp)+'" style="flex:1;font-size:11px;font-family:var(--mono);padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);background:#fff">'
     +'<button class="btn btn-secondary btn-sm" id="bCopyAcompLink"><i class="ti ti-copy"></i> Copiar</button>'
     +'</div>'
     +'<div style="font-size:11px;color:#64748b;margin-top:.3rem">Envie pelo WhatsApp ou e-mail para o cliente acompanhar o processo.</div>'
@@ -7889,21 +7889,6 @@ function buildTokenData(p, checklists){
   };
 }
 
-function gerarLinkCurto(token, callback){
-  var url="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+token;
-  fetch("https://tinyurl.com/api-create.php?url="+encodeURIComponent(url))
-    .then(function(r){return r.text();})
-    .then(function(short){
-      if(short&&short.indexOf("tinyurl.com")>=0){
-        callback(short.trim());
-      } else {
-        callback(url); // fallback to full URL if TinyURL fails
-      }
-    })
-    .catch(function(){
-      callback(url); // fallback on error
-    });
-}
 
 function gerarTokenAcomp(){
   var chars='abcdefghijkmnpqrstuvwxyz23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -8990,12 +8975,7 @@ function bindModal(){
       if(np.acompCliente&&np.tokenAcomp){
         var tokenData=buildTokenData(np,A.checklists||{});
         db.collection("tokens").doc(np.tokenAcomp).set(tokenData);
-        // Generate short URL via TinyURL
-        gerarLinkCurto(np.tokenAcomp,function(shortUrl){
-          np.linkAcomp=shortUrl;
-          db.collection("processes").doc(np.id).update({linkAcomp:shortUrl});
-          for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===np.id){A.processes[xi].linkAcomp=shortUrl;break;}
-        });
+
       }
       A.sel=np;A.tab="dados";A.epartes={};A.modal="ver";ov.remove();render();renderModal();toast("Protocolo "+pr+" criado!");
     });
@@ -9142,9 +9122,7 @@ function bindModal(){
   var epLinkInput=document.getElementById("epAcompLinkInput");
   if(epLinkInput&&epLinkInput.dataset.token){
     var shortLink=epLinkInput.dataset.short;
-    epLinkInput.value=(shortLink&&shortLink.indexOf("tinyurl")>=0)
-      ?shortLink
-      : + BASE_URL + +epLinkInput.dataset.token;
+    epLinkInput.value="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+epLinkInput.dataset.token;
   }
   var bCopyLink=document.getElementById("bCopyAcompLink");
   if(bCopyLink)bCopyLink.onclick=function(){
@@ -9191,14 +9169,7 @@ function bindModal(){
         // Save token doc with all public data + generate short link
         var snapData=buildTokenData(Object.assign({},p,upd), A.checklists||{});
         db.collection("tokens").doc(upd.tokenAcomp).set(snapData);
-        // Generate short URL if not already generated
-        if(!upd.linkAcomp){
-          gerarLinkCurto(upd.tokenAcomp,function(shortUrl){
-            upd.linkAcomp=shortUrl;
-            db.collection("processes").doc(p.id).update({linkAcomp:shortUrl});
-            for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===p.id){A.processes[xi].linkAcomp=shortUrl;break;}
-          });
-        }
+
       }
       if(nowAcomp&&p.tokenAcomp)upd.tokenAcomp=p.tokenAcomp;
       if(!nowAcomp){
@@ -9390,7 +9361,7 @@ function bindModal(){
       var qrEl=document.getElementById("qrCodeCapa");
       if(qrEl&&window.QRCode){
         qrEl.innerHTML="";
-        var statusUrl=(A.sel.linkAcomp&&A.sel.linkAcomp.indexOf("tinyurl")>=0)?A.sel.linkAcomp:("https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+(A.sel.tokenAcomp||encodeURIComponent(A.sel.protocol||A.sel.id)));
+        var statusUrl="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+(A.sel.tokenAcomp||encodeURIComponent(A.sel.protocol||A.sel.id));
         new QRCode(qrEl,{text:statusUrl,width:80,height:80,colorDark:"#1a3a5c",colorLight:"#ffffff"});
       }
     },100);
