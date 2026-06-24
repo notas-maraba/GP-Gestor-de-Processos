@@ -1866,8 +1866,18 @@ function mNovoUser(){
 
 function mEditCl(){
   var k=A.ecl,cl=A.checklists[k];if(!cl)return "";
-  var h='<div class="modal" style="max-width:700px"><div class="modal-header"><div class="modal-title"><i class="ti ti-edit"></i> Editar Checklist</div><button class="close-btn" id="cm">x</button></div>'
-  +'<div class="modal-body"><div class="field"><label>Nome</label><input id="clN" type="text" value="'+ex(cl.name)+'"></div>';
+  // Get nat config for codN/codR
+  var natCfg={codN:"",codR:""};
+  if(A.nats)for(var ni=0;ni<A.nats.length;ni++)if(A.nats[ni].key===k){natCfg=A.nats[ni];break;}
+  var h='<div class="modal" style="max-width:700px"><div class="modal-header"><div class="modal-title"><i class="ti ti-edit"></i> Editar Natureza</div><button class="close-btn" id="cm">x</button></div>'
+  +'<div class="modal-body">'
+  +'<div class="form-grid" style="margin-bottom:.75rem">'
+  +'<div class="field col-span-2"><label>Nome da natureza</label><input id="clN" type="text" value="'+ex(cl.name)+'"></div>'
+  +'<div class="field"><label>Codigos Notas (orcamento)</label>'
+  +'<input id="clCodN" type="text" placeholder="Ex: 568-618 ou 671" value="'+ex(natCfg.codN||'')+'"><div style="font-size:11px;color:var(--muted);margin-top:2px">Faixa de codigos da tabela de notas para calcular orcamento pelo valor do imovel</div></div>'
+  +'<div class="field"><label>Codigos Registro (orcamento)</label>'
+  +'<input id="clCodR" type="text" placeholder="Ex: 157-207" value="'+ex(natCfg.codR||'')+'"><div style="font-size:11px;color:var(--muted);margin-top:2px">Faixa de codigos da tabela de registro</div></div>'
+  +'</div>';
   for(var si=0;si<cl.sections.length;si++){h+='<div class="checklist-section"><div class="flex items-center gap-sm" style="margin-bottom:.5rem"><input type="text" class="cl_st" data-si="'+si+'" value="'+ex(cl.sections[si].title)+'" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:var(--font);font-weight:600"><button class="btn btn-danger btn-sm" data-ds="'+si+'"><i class="ti ti-trash"></i></button></div>';for(var ii=0;ii<cl.sections[si].items.length;ii++)h+='<div class="cl-item-row"><input type="text" class="cl_it" data-si="'+si+'" data-ii="'+ii+'" value="'+ex(cl.sections[si].items[ii])+'"><button class="btn btn-danger btn-sm" style="padding:4px 8px;flex-shrink:0" data-di="'+si+"-"+ii+'"><i class="ti ti-x"></i></button></div>';h+='<button class="btn btn-secondary btn-sm" style="margin-top:.5rem" data-ai="'+si+'"><i class="ti ti-plus"></i> Item</button></div>';}
   h+='<button class="btn btn-secondary btn-sm" id="bAS" style="margin-top:.5rem"><i class="ti ti-plus"></i> Nova secao</button></div>'
   +'<div class="modal-footer"><button class="btn btn-secondary" id="cm2">Cancelar</button><button class="btn btn-primary" id="bSvCL"><i class="ti ti-device-floppy"></i> Salvar</button></div></div>';
@@ -9413,19 +9423,33 @@ function bindModal(){
   };
   var bSvCLEl=document.getElementById("bSvCL");
   if(bSvCLEl)bSvCLEl.onclick=function(){
-    var k=A.ecl,cl=JSON.parse(JSON.stringify(A.checklists[k]));cl.name=document.getElementById("clN").value.trim();
+    var k=A.ecl,cl=JSON.parse(JSON.stringify(A.checklists[k]));
+    cl.name=document.getElementById("clN").value.trim();
+    // Read codN/codR from new fields
+    var newCodN=(document.getElementById("clCodN")||{}).value||"";
+    var newCodR=(document.getElementById("clCodR")||{}).value||"";
+    newCodN=newCodN.trim();newCodR=newCodR.trim();
     var sts=ov.querySelectorAll(".cl_st");for(var sti=0;sti<sts.length;sti++)cl.sections[parseInt(sts[sti].dataset.si)].title=sts[sti].value;
     for(var si2=0;si2<cl.sections.length;si2++){var its=ov.querySelectorAll('.cl_it[data-si="'+si2+'"]'),items=[];for(var ii3=0;ii3<its.length;ii3++)items.push(its[ii3].value);cl.sections[si2].items=items;}
     A.checklists[k]=cl;
-    // Read current firebase state first, then merge to avoid overwriting other checklists
+    // Update codN/codR in A.nats
+    var foundNat=false;
+    for(var ni2=0;ni2<A.nats.length;ni2++){
+      if(A.nats[ni2].key===k){
+        A.nats[ni2].label=cl.name;
+        A.nats[ni2].codN=newCodN;
+        A.nats[ni2].codR=newCodR;
+        foundNat=true;break;
+      }
+    }
+    if(!foundNat)A.nats.push({key:k,label:cl.name,codN:newCodN,codR:newCodR});
     ssy(true);
     db.collection("config").doc("checklists").get().then(function(snap){
       var saveData=snap.exists&&snap.data().data?snap.data().data:{};
-      // Only update the edited checklist key, preserve all others
       saveData[k]=cl;
-      var saveNats=snap.exists&&snap.data().nats&&snap.data().nats.length?snap.data().nats:A.nats;
-      return db.collection("config").doc("checklists").update({data:saveData,nats:saveNats});
-    }).then(function(){ssy(false);A.modal=null;ov.remove();render();toast("Checklist salvo!");});
+      return db.collection("config").doc("checklists").update({data:saveData,nats:A.nats});
+    }).then(function(){ssy(false);A.modal=null;ov.remove();render();toast("Natureza salva!");})
+    .catch(function(e){ssy(false);toast("Erro: "+e.message,"error");});
   };
   var ais=ov.querySelectorAll("[data-ai]");for(var aii=0;aii<ais.length;aii++)(function(btn){btn.onclick=function(){A.checklists[A.ecl].sections[parseInt(btn.dataset.ai)].items.push("Novo item");ov.innerHTML=gMH();bindModal();};})(ais[aii]);
   var dis=ov.querySelectorAll("[data-di]");for(var dii=0;dii<dis.length;dii++)(function(btn){btn.onclick=function(){var p2=btn.dataset.di.split("-"),si3=parseInt(p2[0]),ii4=parseInt(p2[1]);A.checklists[A.ecl].sections[si3].items.splice(ii4,1);ov.innerHTML=gMH();bindModal();};})(dis[dii]);
