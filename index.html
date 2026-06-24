@@ -969,7 +969,7 @@ function rProc(){
     +'<td style="font-family:var(--mono);font-size:11px">'+ex(fp.matriculas||"---")+'</td>'
     +'<td class="text-sm text-muted">'+fd(fp.dataAbertura)+'</td>'
     +'<td class="text-sm">'+(fp.dataAssinatura?'<span style="color:'+(asp?"var(--green)":"inherit")+';font-weight:'+(asp?"600":"400")+'">'+fd(fp.dataAssinatura)+(asp?" &#128197;":"")+'</span>':"---")+'</td>'
-    +'<td><span class="status-badge '+fs.cls+'">'+fs.label+'</span>'+(fd2>3?' <span class="stale-badge">&#9888;'+fd2+'d</span>':"")+(function(){if(fp.status==="minutando"){if(fp.minutadoPorNome){var mu=getUserById(fp.minutadoPor);return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer" data-resp-jump="'+(fp.minutadoPor||'')+'">'+avBadge(fp.minutadoPorNome,mu?mu.photo:null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(fp.minutadoPorNome.split(" ")[0])+'</span></div>';}return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem responsavel</div>';}if(fp.status==="conferindo"){if(fp.conferidoPorNome){var cu=getUserById(fp.conferidoPor);return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer" data-resp-jump="'+(fp.conferidoPor||'')+'">'+avBadge(fp.conferidoPorNome,cu?cu.photo:null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(fp.conferidoPorNome.split(" ")[0])+'</span></div>';}return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem responsavel</div>';}return '';})()+'</td>'
+    +'<td><span class="status-badge '+fs.cls+'">'+fs.label+'</span>'+(fd2>3?' <span class="stale-badge">&#9888;'+fd2+'d</span>':"")+(function(){if(fp.status==="minutando"){if(fp.minutadoPorNome){var mu=getUserById(fp.minutadoPor);return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer" data-resp-jump="'+(fp.minutadoPor||'')+'">'+avBadge(fp.minutadoPorNome,mu?mu.photo:null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(fp.minutadoPorNome.split(" ")[0])+'</span></div>';}return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem responsavel</div>';}if(fp.status==="conferindo"){if(fp.conferidoPorNome){var cu=getUserById(fp.conferidoPor);return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer" data-resp-jump="'+(fp.conferidoPor||'')+'">'+avBadge(fp.conferidoPorNome,cu?cu.photo:null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(fp.conferidoPorNome.split(" ")[0])+'</span></div>';}return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem responsavel</div>';}if(fp.status==="registro"){return fp.protocoloRegistro?'<div style="margin-top:4px;font-size:10px;color:#0369a1;font-weight:600"><i class="ti ti-building-bank"></i> '+ex(fp.protocoloRegistro)+'</div>':'<div style="margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem protocolo</div>';}return '';})()+'</td>'
     +'<td><div style="display:flex;align-items:center;gap:5px"><div style="width:40px;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:'+fpg.pct+'%;height:100%;background:'+(fpg.pct===100?"var(--green)":"var(--accent)")+'"></div></div><span class="text-xs text-muted">'+fpg.done+"/"+fpg.total+'</span></div></td>'
     +'<td class="no-print"><div class="flex gap-sm">'
     +'<button class="btn btn-info btn-sm" data-rs="'+fp.id+'" title="Resumo rapido"><i class="ti ti-eye"></i></button>'
@@ -1459,7 +1459,7 @@ function colP(prefix,list){
 
 // MODAL
 function renderModal(){var ov=document.getElementById("mOv");if(ov)ov.remove();var el=document.createElement("div");el.id="mOv";el.className="modal-overlay no-print";el.innerHTML=gMH();document.body.appendChild(el);bindModal();bindMoneyInputs(el);}
-function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();if(A.modal==="photoEdit")return mPhotoEdit();if(A.modal==="novoAto")return mNovoAto();if(A.modal==="copyCl")return mCopyCl();if(A.modal==="pickResp")return mPickResp();if(A.modal==="devolverPend")return mDevolverPend();return "";}
+function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();if(A.modal==="photoEdit")return mPhotoEdit();if(A.modal==="novoAto")return mNovoAto();if(A.modal==="copyCl")return mCopyCl();if(A.modal==="pickResp")return mPickResp();if(A.modal==="devolverPend")return mDevolverPend();if(A.modal==="protReg")return mProtReg();return "";}
 
 function mNovo(){
   var nat=A.fnat2,groups=glGroups(nat),fields=glFields(nat),no="";
@@ -1625,7 +1625,11 @@ function tDados(p){
   +'<div class="field col-span-2" style="display:flex;align-items:center;gap:.75rem;background:var(--surface2);padding:.75rem;border-radius:var(--r);border:1px solid var(--border)">'
   +'<input type="checkbox" id="epPago" style="width:18px;height:18px;accent-color:var(--accent)"'+(p.pago?" checked":"")+'>'
   +'<label for="epPago" style="font-size:14px;font-weight:600;cursor:pointer">Pagamento recebido / quitado</label></div>'
-  +'<div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">'
+  +'<div class="field" style="margin-top:.75rem"><label><i class="ti ti-building-bank"></i> Protocolo do Registro</label>'
+  +'<input type="text" id="epProtReg" placeholder="Ex: 2024-12345" value="'+ex(p.protocoloRegistro||'')+'" style="margin-top:4px">'
+  +'<div style="font-size:11px;color:var(--muted);margin-top:3px">Numero do protocolo gerado pelo Registro de Imoveis. Pode ser preenchido a qualquer momento.</div>'
+  +'</div>'
+  +'<div style="display:flex;align-items:center;gap:.5rem;margin-top:.75rem">'
   +'<input type="checkbox" id="epAcompCliente" style="width:16px;height:16px;cursor:pointer"'+(p.acompCliente?" checked":"")+'>'
   +'<label for="epAcompCliente" style="font-size:13px;cursor:pointer"><i class="ti ti-qrcode"></i> Gerar QR Code para acompanhamento do cliente</label>'
   +'</div>'
@@ -1818,6 +1822,7 @@ function mCapa(){
   })()
   +(fields.valor&&p.valor?'<div class="cover-row"><span class="cover-label">'+fields.valorLabel+':</span><span class="cover-val">'+ex(p.valor)+'</span></div>':"")
   +(p.dataAssinatura?'<div class="cover-row" style="background:#e8f0f8;border-radius:6px;padding:6px 10px;margin-bottom:.5rem"><span class="cover-label" style="font-size:15px;color:#1a3a5c">&#128197; Data Assinatura:</span><span class="cover-val" style="font-size:15px;font-weight:700;color:#1a3a5c">'+fd(p.dataAssinatura)+'</span></div>':"")
+  +(p.protocoloRegistro?'<div class="cover-row" style="background:#e0f2fe;border-radius:6px;padding:6px 10px;margin-bottom:.5rem"><span class="cover-label" style="font-size:15px;color:#0369a1">&#127970; Protocolo Registro:</span><span class="cover-val" style="font-size:15px;font-weight:700;color:#0369a1">'+ex(p.protocoloRegistro)+'</span></div>':"")
   +(p.responsavel?'<div class="cover-row"><span class="cover-label">Responsavel:</span><span class="cover-val">'+ex(p.responsavel)+'</span></div>':"")
   +(p.vinculados&&p.vinculados.length?'<div class="cover-row"><span class="cover-label">Vinculados:</span><span class="cover-val">'+(function(){var vns=[];for(var vi=0;vi<(p.vinculados||[]).length;vi++){for(var vj=0;vj<A.processes.length;vj++)if(A.processes[vj].id===p.vinculados[vi]){vns.push(A.processes[vj].protocol);break;}}return ex(vns.join(', '));})()+'</span></div>':"")
   +(p.pgInfo?'<div class="cover-row"><span class="cover-label">Pgto info:</span><span class="cover-val">'+ex(p.pgInfo)+'</span></div>':"")
@@ -7907,6 +7912,26 @@ function gerarTokenAcomp(){
   return token;
 }
 
+function mProtReg(){
+  var p=A.sel;
+  return '<div class="modal" style="max-width:440px">'
+    +'<div class="modal-header"><div class="modal-title"><i class="ti ti-building-bank"></i> Mover para Em Registro</div>'
+    +'<button class="close-btn" id="cm">x</button></div>'
+    +'<div class="modal-body">'
+    +'<div style="background:var(--surface2);border-radius:var(--r);padding:.65rem .75rem;margin-bottom:.75rem;font-size:13px">'
+    +'<i class="ti ti-info-circle"></i> Informe o numero do Protocolo de Registro gerado pelo Cartorio de Registro de Imoveis.'
+    +'<br><span style="font-size:11px;color:var(--muted)">Pode pular agora e preencher depois no cadastro do processo.</span>'
+    +'</div>'
+    +'<div class="field"><label>Numero do Protocolo de Registro</label>'
+    +'<input type="text" id="inputProtReg" placeholder="Ex: 2024-12345" value="'+ex(p.protocoloRegistro||'')+'" style="font-size:15px;font-weight:600">'
+    +'</div>'
+    +'</div>'
+    +'<div class="modal-footer">'
+    +'<button class="btn btn-secondary" id="bSkipProtReg"><i class="ti ti-arrow-right"></i> Pular por agora</button>'
+    +'<button class="btn btn-primary" id="bConfProtReg"><i class="ti ti-check"></i> Confirmar e Mover</button>'
+    +'</div></div>';
+}
+
 function bindApp(){
   var bThemeEl=document.getElementById('bTheme');
   if(bThemeEl)bThemeEl.onclick=toggleTheme;
@@ -8639,6 +8664,36 @@ function bindModal(){
     };
   }
 
+  // Protocolo de Registro modal
+  if(A.modal==="protReg"){
+    var doAdvReg=function(protNum){
+      var p=A.sel;
+      var hist=JSON.parse(JSON.stringify(p.statusHistory||[]));
+      hist.push({status:"registro",by:A.user.id,at:new Date().toISOString()});
+      var advUpd={status:"registro",statusHistory:hist};
+      if(p.status==="conferindo")advUpd.conferidoFimEm=new Date().toISOString();
+      if(protNum)advUpd.protocoloRegistro=protNum;
+      ssy(true);
+      db.collection("processes").doc(p.id).update(advUpd).then(function(){
+        ssy(false);
+        Object.assign(p,advUpd);
+        for(var xi=0;xi<A.processes.length;xi++)if(A.processes[xi].id===p.id){A.processes[xi]=JSON.parse(JSON.stringify(p));break;}
+        A.modal=null;A.pendingAdvance=null;
+        if(ov)ov.remove();
+        toast("Processo movido para Em Registro"+(protNum?" \u2014 Protocolo: "+protNum:""));
+        render();
+      }).catch(function(e){ssy(false);toast("Erro: "+e.message,"error");});
+    };
+    var bConfPR2=ov.querySelector("#bConfProtReg");
+    if(bConfPR2)bConfPR2.onclick=function(){
+      var num=(ov.querySelector("#inputProtReg")||{}).value||"";
+      doAdvReg(num.trim());
+    };
+    var bSkipPR=ov.querySelector("#bSkipProtReg");
+    if(bSkipPR)bSkipPR.onclick=function(){doAdvReg("");};
+    setTimeout(function(){var inp=ov.querySelector("#inputProtReg");if(inp)inp.focus();},100);
+  }
+
   if(A.modal==="novoAto"){
     var bConfNA=ov.querySelector("#bConfNovoAto");
     if(bConfNA)bConfNA.onclick=function(){
@@ -9099,6 +9154,13 @@ function bindModal(){
       renderModal();
       return;
     }
+    // When entering registro, ask for protocol number (optional)
+    if(nx.key==="registro"){
+      A.pendingAdvance="registro";
+      A.modal="protReg";
+      renderModal();
+      return;
+    }
     var hist=JSON.parse(JSON.stringify(p.statusHistory||[]));hist.push({status:nx.key,by:A.user.id,at:new Date().toISOString()});
     var advUpd={status:nx.key,statusHistory:hist};
     // Record completion timestamp when LEAVING minutando or conferindo
@@ -9168,6 +9230,8 @@ function bindModal(){
     var epNatEl=document.getElementById("epNat");if(epNatEl&&epNatEl.value)upd.natureza=epNatEl.value;
     var epPgInfoEl=document.getElementById("epPgInfo");if(epPgInfoEl)upd.pgInfo=epPgInfoEl.value.trim();
     var epPagoEl=document.getElementById("epPago");if(epPagoEl)upd.pago=epPagoEl.checked;
+    var epProtRegEl=document.getElementById("epProtReg");
+    if(epProtRegEl)upd.protocoloRegistro=epProtRegEl.value.trim();
     var epAcEl=document.getElementById("epAcompCliente");
     if(epAcEl){
       var wasAcomp=p.acompCliente||false;
@@ -9189,7 +9253,7 @@ function bindModal(){
       }
     }
     upd.updatedBy=A.user.id;upd.updatedAt=new Date().toISOString();bSvEEl.disabled=true;
-    var cf={protocol:upd.protocol,natureza:upd.natureza,matriculas:upd.matriculas,dataAbertura:upd.dataAbertura,dataAssinatura:upd.dataAssinatura,responsavel:upd.responsavel,valor:upd.valor,pgInfo:upd.pgInfo,pago:upd.pago,acompCliente:(upd.acompCliente||false),tokenAcomp:(upd.tokenAcomp||""),enotariado:(upd.enotariado||false),enotariadoFone:(upd.enotariadoFone||""),updatedBy:upd.updatedBy,updatedAt:upd.updatedAt};
+    var cf={protocol:upd.protocol,natureza:upd.natureza,matriculas:upd.matriculas,dataAbertura:upd.dataAbertura,dataAssinatura:upd.dataAssinatura,responsavel:upd.responsavel,valor:upd.valor,pgInfo:upd.pgInfo,pago:upd.pago,acompCliente:(upd.acompCliente||false),tokenAcomp:(upd.tokenAcomp||""),protocoloRegistro:(upd.protocoloRegistro||""),enotariado:(upd.enotariado||false),enotariadoFone:(upd.enotariadoFone||""),updatedBy:upd.updatedBy,updatedAt:upd.updatedAt};
     ssy(true);db.collection("processes").doc(p.id).update(cf).then(function(){ssy(false);A.sel=upd;for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=upd;break;}ov.innerHTML=gMH();bindModal();toast("Dados salvos!");});
   };
   var bSvPtEl=document.getElementById("bSvPt");
