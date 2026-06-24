@@ -3163,7 +3163,6 @@ function calcOrcamento(){
   var regFaixa=plNat2.codR
     ?parseCodFaixa(plNat2.codR,TABELA_REG)
     :TABELA_REG.filter(function(a){return a.cod>=157&&a.cod<=207;});
-  var regFaixa=TABELA_REG.filter(function(a){return a.cod>=157&&a.cod<=207;});
   var notasItens=[];
   var regItens=[];
   for(var i=0;i<imoveis.length;i++){
