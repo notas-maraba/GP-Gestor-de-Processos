@@ -5234,28 +5234,14 @@ function tOrcamentoProc(p){
     } else {
       regFaixa=TABELA_REG.filter(function(a){return a.cod>=157&&a.cod<=207;});
     }
-    if(plNat.codN&&notasFaixa.length){
-      // Custom nat: add matched notas directly (no imovel value needed)
-      for(var ni2=0;ni2<notasFaixa.length;ni2++){
-        var na2=notasFaixa[ni2];
-        notasItens.push({cod:na2.cod,qtd:1,desc:na2.desc,emolBase:na2.emol,issqnBase:na2.issqn,seloBase:na2.selo,val:na2.total,acrescimo:0,removivel:true});
-      }
-    } else {
-      for(var ii=0;ii<imoveis.length;ii++){
-        var lbl=imoveis.length>1?" (Imovel "+(ii+1)+")"+(imoveis[ii].mat?' - Mat.'+imoveis[ii].mat:''):"";
-        var ato=findByValueNew(notasFaixa,imoveis[ii].val||imoveis[ii]);
-        if(ato)notasItens.push({cod:ato.cod,qtd:1,desc:"ESCR COM VALOR DECL - "+ato.desc+lbl,emolBase:ato.emol,issqnBase:ato.issqn,seloBase:ato.selo,val:ato.total,acrescimo:0,removivel:true});
-        var regAto=findByValueNew(regFaixa,imoveis[ii].val||imoveis[ii]);
-        if(regAto)regItens.push({cod:regAto.cod,qtd:1,desc:"Reg. Geral c/ valor decl., de "+regAto.desc+lbl,emolBase:regAto.emol,issqnBase:regAto.issqn,seloBase:regAto.selo,val:regAto.total,acrescimo:0,removivel:true});
-      }
-    }
-    if(plNat.codR&&regFaixa.length){
-      for(var ri3=0;ri3<regFaixa.length;ri3++){
-        var ra2=regFaixa[ri3];
-        if(!regItens.some||!regItens.some(function(x){return x.cod===ra2.cod;})){
-          regItens.push({cod:ra2.cod,qtd:1,desc:ra2.desc,emolBase:ra2.emol,issqnBase:ra2.issqn,seloBase:ra2.selo,val:ra2.total,acrescimo:0,removivel:true});
-        }
-      }
+    // Always use findByValueNew — picks the ONE ato matching the property value
+    for(var ii=0;ii<imoveis.length;ii++){
+      var lbl=imoveis.length>1?" (Imovel "+(ii+1)+")"+(imoveis[ii].mat?' - Mat.'+imoveis[ii].mat:''):"";
+      var valorIm=imoveis[ii].val||imoveis[ii];
+      var ato=findByValueNew(notasFaixa,valorIm);
+      if(ato)notasItens.push({cod:ato.cod,qtd:1,desc:"ESCR COM VALOR DECL - "+ato.desc+lbl,emolBase:ato.emol,issqnBase:ato.issqn,seloBase:ato.selo,val:ato.total,acrescimo:0,removivel:true});
+      var regAto=findByValueNew(regFaixa,valorIm);
+      if(regAto)regItens.push({cod:regAto.cod,qtd:1,desc:"Reg. Geral c/ valor decl., de "+regAto.desc+lbl,emolBase:regAto.emol,issqnBase:regAto.issqn,seloBase:regAto.selo,val:regAto.total,acrescimo:0,removivel:true});
     }
     var a154=getAtoByCode(154,TABELA_REG);
     var a340=getAtoByCode(340,TABELA_REG);
