@@ -7917,6 +7917,7 @@ function buildTokenData(p, checklists){
     protocol:  p.protocol||"",
     natureza:  p.natureza||"",
     status:    p.status||"cadastrado",
+    motivoCancelamento: p.motivoCancelamento||"",
     transmitentes: names(p.transmitentes||(p.partes&&p.partes[0])||[]),
     adquirentes:   names(p.adquirentes||(p.partes&&p.partes[1])||[]),
     matriculas:    p.matriculas||"",
