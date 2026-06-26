@@ -112,7 +112,7 @@ tr:hover td{background:#fafaf8}
 .modal{background:var(--surface);border-radius:var(--r2);width:100%;max-width:860px;box-shadow:0 25px 80px rgba(0,0,0,.35);margin:auto}
 .modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;position:sticky;top:0;background:var(--surface);border-radius:var(--r2) var(--r2) 0 0;z-index:2}
 .modal-title{font-size:16px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
-.modal-body{padding:1.5rem;max-height:calc(100vh - 180px);overflow-y:auto;overflow-x:hidden}
+.modal-body{padding:0;max-height:calc(100vh - 180px);overflow-y:auto;overflow-x:hidden}
 .modal-footer{padding:1.25rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap}
 .close-btn{background:none;border:none;cursor:pointer;font-size:22px;color:var(--muted);line-height:1;padding:2px 4px;border-radius:4px}
 .close-btn:hover{background:var(--surface2)}
@@ -189,7 +189,7 @@ input.money-input{font-family:var(--mono);text-align:right;}
 .prod-bar-fill{height:100%;background:var(--accent);border-radius:var(--r);display:flex;align-items:center;padding-left:8px;transition:width .5s}
 .prod-bar-fill span{font-size:11px;color:#fff;font-weight:600;white-space:nowrap}
 .prod-count{font-size:13px;font-family:var(--mono);font-weight:600;color:var(--accent);width:30px;text-align:right;flex-shrink:0}
-.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:1.25rem;overflow-x:auto}
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:1.25rem;overflow-x:auto;position:sticky;top:0;z-index:10;background:var(--surface)}
 .tab{padding:8px 18px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;user-select:none}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .tab:hover:not(.active){color:var(--text);background:var(--surface2)}
@@ -1509,7 +1509,6 @@ function mNovo(){
   var savedPgInfo=A._fPgInfo||"";
   var savedPago=A._fPago||false;
   return '<div class="modal" style="max-width:860px"><div class="modal-header"><div class="modal-title"><i class="ti ti-file-plus"></i> Novo Protocolo</div><button class="close-btn" id="cm">x</button></div>'
-  +(s.key==="cancelado"?'<div style="background:#dc2626;color:#fff;padding:6px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px"><i class="ti ti-ban"></i> PROCESSO CANCELADO</div>':"")
   +'<div class="modal-body">'
   +'<div class="form-grid"><div class="field"><label>Protocolo *</label><input id="fPr" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Somente numeros" maxlength="20" value="'+ex(savedPr)+'"></div>'
   +'<div class="field"><label>Natureza *</label><select id="fNa">'+no+'</select></div></div>'
@@ -1574,7 +1573,8 @@ function mVer(){
   +'<div class="tab'+(A.tab==="orcamento_proc"?" active":"")+'" data-tab="orcamento_proc"><i class="ti ti-receipt"></i> Orcamento</div>'
   +(function(){var vc='<div class="tab'+(A.tab==="vinculados"?' active':'')+' " data-tab="vinculados"><i class="ti ti-link"></i> Vinculados'+(p.vinculados&&p.vinculados.length?' ('+p.vinculados.length+')':'')+'</div>';return vc;}())
   +'</div>';
-  return '<div class="modal" style="max-width:920px"><div class="modal-header">'
+  return '<div class="modal" style="max-width:920px"><div class="modal-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem">'
+  +'<div style="flex:1;min-width:0">'
   +'<div>'
   +'<div class="modal-title"><span class="proto-num">'+ex(p.protocol)+'</span> <span class="badge '+n.badge+'">'+n.label+'</span>'+(d2>3?' <span class="stale-badge">&#9888;'+d2+'d</span>':"")+' </div>'
   +'<div class="text-xs text-muted" style="margin-top:3px">Aberto em '+fd(p.dataAbertura)+' por '+ex(gun(p.createdBy))+'</div>'
@@ -1604,8 +1604,18 @@ function mVer(){
   })()
   +'</div>'
   +'</div>'
-  +'<div class="flex gap-sm items-center flex-wrap">'
-  +(canBack(p)?(function(){
+  +'</div>'
+  +'<div style="display:flex;align-items:center;gap:.25rem;flex-shrink:0;padding-top:2px">'
+  +'<button id="bPrt" title="Imprimir Capa" style="background:#f0f0f0;border:1px solid #bbb;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;color:#333;transition:background .15s"><i class="ti ti-printer"></i> Capa</button>'
+  +'<div style="width:1px;height:24px;background:var(--border);margin:0 6px"></div>'
+  +'<div style="display:flex;gap:2px">'
+  +'<button id="bWinMax" title="Maximizar" style="width:28px;height:24px;border-radius:4px 0 0 4px;background:#c0c0c0;border:1px solid #999;border-right:none;cursor:pointer;font-size:12px;font-weight:700;color:#333;display:flex;align-items:center;justify-content:center;transition:background .15s">&#9633;</button>'
+  +'<button id="cm" title="Fechar" style="width:32px;height:24px;border-radius:0 4px 4px 0;background:#e81123;border:1px solid #c00;cursor:pointer;font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .15s">&#10005;</button>'
+  +'</div>'
+  +'</div>'
+  +'</div>'
+  +'<div style="display:flex;align-items:center;gap:.5rem;padding:6px 12px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">'
++(canBack(p)?(function(){
     var prv=prvst(p);
     var pcolors={cadastrado:"background:#e0f2fe;color:#0369a1",para_minutar:"background:#fef9c3;color:#854d0e",minutando:"background:#fef3c7;color:#92400e",para_conferir:"background:#fce7f3;color:#9d174d",conferindo:"background:#f3e8ff;color:#6b21a8",aguard_assinatura:"background:#dbeafe;color:#1e40af",assinado:"background:#dcfce7;color:#166534",registro:"background:#1a3a5c;color:#fff",cancelado:"background:#dc2626;color:#fff"};
     var pstyle=pcolors[prv.key]||"background:#e5e7eb;color:#111";
@@ -1631,16 +1641,18 @@ function mVer(){
   +'<option value="concluido">Concluido</option>'
   +'</select>'
   :"")
-  +'<button class="btn btn-secondary btn-sm" id="bPrt"><i class="ti ti-printer"></i></button>'
-  +'<button class="close-btn" id="cm">x</button></div></div>'
-  +'<div class="modal-body">'+tb
+  +'</div>'
+  +(s.key==="cancelado"?'<div style="background:#dc2626;color:#fff;padding:6px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px"><i class="ti ti-ban"></i> PROCESSO CANCELADO</div>':"")
+  +'<div class="modal-body">'
+  +tb
+  +'<div style="padding:1.25rem 1.5rem">'
   +(A.tab==="dados"?tDados(p):"")
   +(A.tab==="partes"?tPartes(p):"")
   +(A.tab==="checklist"?tCl(p,cl):"")
   +(A.tab==="historico"?tHist(p):"")
   +(A.tab==="comentarios"?tComm(p):"")  +(A.tab==="orcamento_proc"?tOrcamentoProc(p):"")
   +(A.tab==="vinculados"?'<div style="padding:.5rem 0">'+rVinculados(p)+'</div>':"")
-  +'</div></div>';
+  +'</div>'+'</div></div>';
 }
 
 function tDados(p){
@@ -8028,7 +8040,9 @@ function bindApp(){
   var fDTEl=document.getElementById("fDT");if(fDTEl)fDTEl.onchange=function(e){A.fdt=e.target.value;render();};
   var bCFEl=document.getElementById("bCF");if(bCFEl)bCFEl.onclick=function(){A.search="";A.fnat="";A.fst="";A.fdf="";A.fdt="";A.pipe=null;A.fCorretor="";render();};
   var bCPEl=document.getElementById("bCP");if(bCPEl)bCPEl.onclick=function(){A.pipe=null;render();};
-  var bNvEl=document.getElementById("bNv");if(bNvEl)bNvEl.onclick=function(){
+  // bNv - bind directly (bindApp is called after every render so button exists)
+  var bNvEl=document.getElementById("bNv");
+  if(bNvEl)bNvEl.onclick=function(){
     if(A.isOnline===false){
       toast("Voce esta OFFLINE. Nao e possivel cadastrar novos protocolos sem internet, para evitar numeros duplicados. Edicoes e comentarios em protocolos ja abertos continuam funcionando.","error");
       return;
@@ -9274,6 +9288,40 @@ function bindModal(){
     }
   };
 
+  // Win7 window controls
+  var bWinMax=document.getElementById("bWinMax");
+  var modalEl=ov?ov.querySelector(".modal"):null;
+  if(bWinMax&&modalEl){
+    bWinMax.onclick=function(){
+      if(modalEl.dataset.maximized==="1"){
+        modalEl.style.cssText="";
+        ov.style.alignItems="";ov.style.padding="";
+        modalEl.dataset.maximized="0";
+        bWinMax.innerHTML="&#9633;";bWinMax.title="Maximizar";
+      } else {
+        modalEl.style.width="100vw";modalEl.style.height="100vh";
+        modalEl.style.maxWidth="100vw";modalEl.style.maxHeight="100vh";
+        modalEl.style.borderRadius="0";modalEl.style.margin="0";
+        ov.style.alignItems="flex-start";ov.style.padding="0";
+        modalEl.dataset.maximized="1";
+        bWinMax.innerHTML="&#10064;";bWinMax.title="Restaurar";
+      }
+    };
+    bWinMax.onmouseenter=function(){bWinMax.style.background="#a0a0a0";};
+    bWinMax.onmouseleave=function(){bWinMax.style.background="#c0c0c0";};
+  }
+  // minimize button removed
+  var cmBtn=document.getElementById("cm");
+  if(cmBtn){
+    cmBtn.onmouseenter=function(){cmBtn.style.background="#ff0000";};
+    cmBtn.onmouseleave=function(){cmBtn.style.background="#e81123";};
+  }
+  var bPrtBtn=document.getElementById("bPrt");
+  if(bPrtBtn){
+    bPrtBtn.onmouseenter=function(){bPrtBtn.style.background="#e0e0e0";};
+    bPrtBtn.onmouseleave=function(){bPrtBtn.style.background="#f0f0f0";};
+  }
+
   // Cancel process
   var bCancelarProc=document.getElementById("bCancelarProc");
   if(bCancelarProc)bCancelarProc.onclick=function(){
@@ -9552,18 +9600,55 @@ function bindModal(){
     });
   };})(restoreSecs[rsi]);
 
-  var bPrtEl=document.getElementById("bPrt");if(bPrtEl)bPrtEl.onclick=function(){A.modal="capa";ov.innerHTML=gMH();bindModal();};
-  // Generate QR code when capa opens
-  if(A.modal==="capa"&&A.sel){
+  var bPrtEl=document.getElementById("bPrt");
+  if(bPrtEl)bPrtEl.onclick=function(){
+    // Open capa in new window WITHOUT closing the protocol modal
+    var tempDiv=document.createElement("div");
+    tempDiv.style.display="none";
+    tempDiv.innerHTML=mCapa();
+    document.body.appendChild(tempDiv);
+    // Generate QR code inside temp div
+    var qrEl2=tempDiv.querySelector("#qrCodeCapa");
+    if(qrEl2&&window.QRCode&&A.sel&&A.sel.tokenAcomp){
+      var statusUrl2="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+A.sel.tokenAcomp;
+      new QRCode(qrEl2,{text:statusUrl2,width:80,height:80,colorDark:"#1a3a5c",colorLight:"#ffffff"});
+    }
     setTimeout(function(){
-      var qrEl=document.getElementById("qrCodeCapa");
-      if(qrEl&&window.QRCode){
-        qrEl.innerHTML="";
-        var statusUrl="https://notas-maraba.github.io/GP-Gestor-de-Processos/status.html?t="+(A.sel.tokenAcomp||encodeURIComponent(A.sel.protocol||A.sel.id));
-        new QRCode(qrEl,{text:statusUrl,width:80,height:80,colorDark:"#1a3a5c",colorLight:"#ffffff"});
-      }
-    },100);
-  }
+      var capa=tempDiv.querySelector(".cover-preview");
+      if(!capa){tempDiv.remove();return;}
+      var pw=window.open("","_blank","width=800,height=1000");
+      pw.document.write('<html><head><title>Capa do Protocolo</title><style>'
+        +'@page{size:A4 portrait;margin:8mm}body{font-family:"IBM Plex Sans",Arial,sans-serif;margin:0;padding:8mm;color:#000;font-size:11px}'
+        +'.logo-capa{height:70px;width:auto;display:block;margin:0 auto 8px}'
+        +'.cover-header{text-align:center;border-bottom:2px solid #1a3a5c;padding-bottom:12px;margin-bottom:12px}'
+        +'.cover-header h2{font-size:14px;color:#1a3a5c;font-weight:700;margin-bottom:3px}'
+        +'.cover-header p{font-size:10px;color:#555;margin:2px 0}'
+        +'.cover-proto{font-family:monospace;font-size:20px;font-weight:700;color:#1a3a5c;text-align:center;margin:12px 0;padding:10px;background:#e8f0f8;border-radius:6px;letter-spacing:2px}'
+        +'.cover-section{margin-bottom:12px}'
+        +'.cover-section h3{font-size:11px;font-weight:700;text-transform:uppercase;color:#1a3a5c;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:6px}'
+        +'.cover-row{display:flex;gap:6px;margin-bottom:4px}'
+        +'.cover-label{font-size:12px;font-weight:600;color:#333;min-width:140px;flex-shrink:0}'
+        +'.cover-val{font-size:12px;color:#111;flex:1}'
+        +'.cover-parte{font-size:12px;padding:4px 0;border-bottom:1px dotted #eee}'
+        +'.cover-docs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}'
+        +'.cover-footer{margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:40px;padding-top:12px;border-top:1px solid #ccc}'
+        +'.cover-sig{text-align:center;padding-top:15px;border-top:1px solid #333;font-size:10px;color:#333;margin-top:8px;line-height:1.6}'
+        +'.cover-pago{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}'
+        +'.cover-pago.sim{background:#dcfce7;color:#166534}'
+        +'.cover-pago.nao{background:#fee2e2;color:#991b1b}'
+        +'.cover-assinatura{background:#e8f0f8;border-radius:4px;padding:5px 8px;margin-bottom:4px}'
+        +'.cover-assinatura .cover-label{font-size:13px;color:#1a3a5c}'
+        +'.cover-assinatura .cover-val{font-size:13px;font-weight:700;color:#1a3a5c}'
+        +'</style></head><body>');
+      pw.document.write(capa.innerHTML);
+      pw.document.write('</body></html>');
+      pw.document.close();
+      pw.focus();
+      pw.onafterprint=function(){pw.close();};
+      setTimeout(function(){pw.print();},500);
+      tempDiv.remove();
+    },300);
+  };
   var bSvUEl=document.getElementById("bSvU");
   if(bSvUEl)bSvUEl.onclick=function(){
     if(A.user.role!=="supervisor"){toast("Apenas supervisor pode criar usuarios.","error");return;}
