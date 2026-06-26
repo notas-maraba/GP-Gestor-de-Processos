@@ -1530,6 +1530,7 @@ function mNovo(){
 
 function mVer(){
   var p=A.sel;if(!p)return "";
+  var sup=A.user&&A.user.role==="supervisor";
   var n=gn(p.natureza),s=gs(p.status||"cadastrado"),pg=gcp(p),cl=A.checklists[p.natureza],d2=days(p),nx=nxst(p),ca=cad(p);
   var tb='<div class="tabs">'
   +'<div class="tab'+(A.tab==="dados"?" active":"")+'" data-tab="dados"><i class="ti ti-info-circle"></i> Dados</div>'
