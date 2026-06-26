@@ -1582,6 +1582,20 @@ function mVer(){
     return '<button class="btn btn-sm" id="bAdv" style="'+nstyle+';border:none"><i class="ti ti-arrow-right"></i> Avancar: '+nx.label+'</button>'+(s.key==="conferindo"?'<button class="btn btn-sm" id="bDevolverPend" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;margin-left:4px"><i class="ti ti-alert-triangle"></i> Devolver com Pendencias</button>':'');
   })():"")
   
+  +(sup
+  ?'<select id="bSuperJump" title="Supervisor: Mover direto" style="padding:4px 8px;border:1px solid #f59e0b;border-radius:var(--r);font-size:12px;background:#fffbeb;color:#92400e;cursor:pointer;font-weight:600">'
+  +'<option value="">&#9889; Mover para...</option>'
+  +'<option value="cadastrado">Cadastrado</option>'
+  +'<option value="para_minutar">Para Minutar</option>'
+  +'<option value="minutando">Minutando</option>'
+  +'<option value="para_conferir">Para Conferir</option>'
+  +'<option value="conferindo">Conferindo</option>'
+  +'<option value="aguard_assinatura">Aguardando Assinatura</option>'
+  +'<option value="assinado">Assinado</option>'
+  +'<option value="registro">Em Registro</option>'
+  +'<option value="concluido">Concluido</option>'
+  +'</select>'
+  :"")
   +'<button class="btn btn-secondary btn-sm" id="bPrt"><i class="ti ti-printer"></i></button>'
   +'<button class="close-btn" id="cm">x</button></div></div>'
   +'<div class="modal-body">'+tb
@@ -9196,6 +9210,32 @@ function bindModal(){
       setTimeout(function(){bCopyLink.innerHTML='<i class="ti ti-copy"></i> Copiar';},2000);
     }
   };
+
+  // Supervisor: jump to any status directly
+  var bSuperJump=document.getElementById("bSuperJump");
+  if(bSuperJump)bSuperJump.onchange=function(){
+    var targetStatus=bSuperJump.value;
+    if(!targetStatus)return;
+    bSuperJump.value="";
+    var p=A.sel;
+    if(!p)return;
+    if(targetStatus===p.status){toast("Processo ja esta neste status.","error");return;}
+    if(targetStatus==="registro"){A.pendingAdvance="registro";A.modal="protReg";renderModal();return;}
+    if(targetStatus==="minutando"||targetStatus==="conferindo"){A.pendingAdvance=targetStatus;A.modal="pickResp";renderModal();return;}
+    var sLabel=gs(targetStatus).label;
+    if(!confirm("Mover processo "+p.protocol+" direto para: "+sLabel+"? Esta acao sera registrada no historico."))return;
+    var hist=JSON.parse(JSON.stringify(p.statusHistory||[]));
+    hist.push({status:targetStatus,by:A.user.id,at:new Date().toISOString(),jump:true});
+    var upd={status:targetStatus,statusHistory:hist,updatedAt:new Date().toISOString()};
+    ssy(true);
+    db.collection("processes").doc(p.id).update(upd).then(function(){
+      ssy(false);Object.assign(p,upd);
+      for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
+      ov.innerHTML=gMH();bindModal();
+      toast("Status movido para: "+sLabel);
+    }).catch(function(e){ssy(false);toast("Erro: "+e.message,"error");});
+  };
+
   var bSvEEl=document.getElementById("bSvE");
   if(bSvEEl)bSvEEl.onclick=function(){
     var p=A.sel,upd=JSON.parse(JSON.stringify(p));
