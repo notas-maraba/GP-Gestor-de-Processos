@@ -1461,7 +1461,36 @@ function colP(prefix,list){
 }
 
 // MODAL
-function renderModal(){var ov=document.getElementById("mOv");if(ov)ov.remove();var el=document.createElement("div");el.id="mOv";el.className="modal-overlay no-print";el.innerHTML=gMH();document.body.appendChild(el);bindModal();bindMoneyInputs(el);}
+function renderModal(){
+  var ov=document.getElementById("mOv");if(ov)ov.remove();
+  var el=document.createElement("div");
+  el.id="mOv";el.className="modal-overlay no-print";
+  el.innerHTML=gMH();
+  document.body.appendChild(el);
+  bindModal();bindMoneyInputs(el);
+
+  // Close on click OUTSIDE the modal box (on the overlay backdrop)
+  el.addEventListener("click",function(e){
+    if(e.target===el){
+      // Don't close if it's a form modal (novo, editCl, etc) - only ver/capa
+      var safeToClose=["ver","capa","protReg"].indexOf(A.modal)>=0;
+      if(safeToClose){A.modal=null;el.remove();}
+    }
+  });
+
+  // Close on ESC key
+  function onEsc(e){
+    if(e.key==="Escape"||e.keyCode===27){
+      // Only close if our page has focus (not a print dialog)
+      if(!document.hasFocus())return;
+      var safeToClose=["ver","capa","protReg"].indexOf(A.modal)>=0;
+      if(safeToClose){A.modal=null;el.remove();document.removeEventListener("keydown",onEsc);}
+    }
+  }
+  document.addEventListener("keydown",onEsc);
+  // Store cleanup so it can be removed when modal closes via button
+  el._onEsc=onEsc;
+}
 function gMH(){if(A.modal==="novo")return mNovo();if(A.modal==="ver")return mVer();if(A.modal==="capa")return mCapa();if(A.modal==="resumo")return mResumo(A.sel);if(A.modal==="novoUser")return mNovoUser();if(A.modal==="editUser")return mEditUser();if(A.modal==="editCl")return mEditCl();if(A.modal==="novoCl")return mNovoCl();if(A.modal==="photoEdit")return mPhotoEdit();if(A.modal==="novoAto")return mNovoAto();if(A.modal==="copyCl")return mCopyCl();if(A.modal==="pickResp")return mPickResp();if(A.modal==="devolverPend")return mDevolverPend();if(A.modal==="protReg")return mProtReg();return "";}
 
 function mNovo(){
@@ -5606,9 +5635,17 @@ function bindOrcamentoProc(p){
   }
 
   var bPrint=document.getElementById('bPrintOrcProc');
-  if(bPrint)bPrint.onclick=function(){var pw=doPrintOrcProc();setTimeout(function(){pw.print();},600);};
+  if(bPrint)bPrint.onclick=function(){
+    var pw=doPrintOrcProc();
+    // After printing, close the print window but keep the protocol modal open
+    pw.onafterprint=function(){pw.close();};
+    setTimeout(function(){pw.print();},600);
+  };
   var bPdf=document.getElementById('bPdfOrcProc');
-  if(bPdf)bPdf.onclick=function(){var pw=doPrintOrcProc();setTimeout(function(){pw.print();pw.close();},600);};
+  if(bPdf)bPdf.onclick=function(){
+    var pw=doPrintOrcProc();
+    setTimeout(function(){pw.print();pw.close();},600);
+  };
 }
 
 
@@ -8575,7 +8612,7 @@ bindOrcRapidos();
 function bindModal(){
   var ov=document.getElementById("mOv");if(!ov)return;
   var cls=ov.querySelectorAll("#cm,#cm2");
-  for(var ci=0;ci<cls.length;ci++)(function(btn){btn.onclick=function(){A.modal=null;A.etr=null;A.ead=null;A._fPr=null;A._fDa=null;A._fDs=null;A._fMa=null;A._fRe=null;A._fVl=null;A._fPgInfo=null;A._fPago=false;A.fpartes={};A._fImoveis=null;A.editAtoIdx=null;A.dupAtoMode=false;A.copyNatSrc=null;ov.remove();};})(cls[ci]);
+  for(var ci=0;ci<cls.length;ci++)(function(btn){btn.onclick=function(){A.modal=null;A.etr=null;A.ead=null;A._fPr=null;A._fDa=null;A._fDs=null;A._fMa=null;A._fRe=null;A._fVl=null;A._fPgInfo=null;A._fPago=false;A.fpartes={};A._fImoveis=null;A.editAtoIdx=null;A.dupAtoMode=false;A.copyNatSrc=null;if(ov._onEsc)document.removeEventListener('keydown',ov._onEsc);ov.remove();};})(cls[ci]);
   // Novo Ato modal
   // Pick responsible for minutando/conferindo
   if(A.modal==="pickResp"){
