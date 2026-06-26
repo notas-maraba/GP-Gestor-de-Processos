@@ -33,6 +33,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-heig
 .msg.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;}
 .msg.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;}
 .msg.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;}
+.msg.err{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;}
 .sec-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:.75rem 0 .35rem;padding-bottom:.25rem;border-bottom:2px solid #f1f5f9;}
 .ci{display:flex;align-items:center;gap:8px;padding:.35rem 0;font-size:13px;border-bottom:1px solid #f8fafc;}
 .ci:last-child{border-bottom:none;}
@@ -89,6 +90,7 @@ var MSGS={
   assinado:      {t:"Seu processo foi assinado e está sendo encaminhado para registro.",c:"info"},
   registro:      {t:"⏳ Seu processo assinado está em fase de registro final.",c:"warn"},
   concluido:     {t:"🎉 Processo concluído! Entre em contato com o cartório para retirar seus documentos.",c:"ok"},
+  cancelado:     {t:"❌ Este processo foi cancelado. Entre em contato com o cartório para mais informações.",c:"err"},
 };
 
 function gs(k){for(var i=0;i<STS.length;i++)if(STS[i].key===k)return STS[i];return STS[0];}
