@@ -8102,6 +8102,9 @@ function mPickArmario(){
   var title=isFin?"Finalizado \u2014 Qual arm\u00e1rio?":"Aguard. Assinatura \u2014 Qual arm\u00e1rio?";
   if(isRetro)title="\u26a0\ufe0f Arm\u00e1rio n\u00e3o informado \u2014 informe agora!";
 
+  // Parceiros list
+  var ARMARIOLIST=["Cidade Jardim","Marroquim","Belo Horizonte","Ipiranga","KRW","Prioridades","Mirante Finalizados","Mirante Lavrados","Nov. Progresso"];
+
   var optionsHtml="";
   // Named options from adquirentes
   for(var k=0;k<Math.min(letters.length,3);k++){
@@ -8116,8 +8119,24 @@ function mPickArmario(){
     +'<span style="font-size:13px">Outros \u2014 letra: '
     +'<input type="text" id="armOutrosLetra" maxlength="2" style="width:36px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:13px;text-transform:uppercase" placeholder="?" onclick="event.stopPropagation()">'
     +'</span></label>';
+  // Parceiro
+  var parceiroOpts="";
+  for(var pi=0;pi<ARMARIOLIST.length;pi++){
+    parceiroOpts+='<option value="'+ARMARIOLIST[pi]+'">'+ARMARIOLIST[pi]+'</option>';
+  }
+  optionsHtml+='<label style="display:flex;align-items:flex-start;gap:.5rem;padding:.5rem .75rem;border:1px solid #7c3aed;border-radius:var(--r);cursor:pointer;margin-bottom:.4rem;background:#faf5ff" id="armArmarioLabel">'
+    +'<input type="radio" name="armRadio" value="__armario__" style="accent-color:#7c3aed;margin-top:3px"> '
+    +'<span style="font-size:13px;flex:1">'
+    +'<span style="font-weight:700;color:#7c3aed">\U0001f5c4\ufe0f Arm\u00e1rio</span>'
+    +'<div id="armArmarioSelect" style="display:none;margin-top:.5rem">'
+    +'<select id="armArmarioNome" style="width:100%;padding:6px 10px;border:1px solid #7c3aed;border-radius:var(--r);font-size:13px;background:#fff;color:#1e1b4b" onclick="event.stopPropagation()">'
+    +'<option value="">-- Selecione a empresa --</option>'
+    +parceiroOpts
+    +'</select>'
+    +'</div>'
+    +'</span></label>';
 
-  return '<div class="modal" style="max-width:400px"><div class="modal-header">'
+  return '<div class="modal" style="max-width:420px"><div class="modal-header">'
     +'<div class="modal-title"><i class="ti ti-archive"></i> '+title+'</div>'
     +'<button class="close-btn" id="cm">x</button></div>'
     +'<div style="padding:1.5rem">'
@@ -9577,6 +9596,15 @@ function bindModal(){
     }).catch(function(e){ssy(false);toast("Erro: "+e.message,"error");});
   };
 
+  // Show parceiro dropdown when radio is selected
+  var armRadios=ov?ov.querySelectorAll("input[name=armRadio]"):[];
+  for(var ari=0;ari<armRadios.length;ari++)(function(radio){
+    radio.onchange=function(){
+      var parceiroSel=ov.querySelector("#armArmarioSelect");
+      if(parceiroSel)parceiroSel.style.display=radio.value==="__armario__"?"block":"none";
+    };
+  })(armRadios[ari]);
+
   // Armario confirm button
   var bConfArm=document.getElementById("bConfirmArmario");
   if(bConfArm)bConfArm.onclick=function(){
@@ -9589,6 +9617,12 @@ function bindModal(){
       if(!letra){toast("Digite a letra do armario.","error");if(letraEl)letraEl.focus();return;}
       var prefix=A.pendingAdvance==="finalizado"?"Fin.":"Lav.";
       val=prefix+" "+letra;
+    }
+    if(val==="__armario__"){
+      var parceiroNomeEl=ov.querySelector("#armArmarioNome");
+      var parceiroNome=(parceiroNomeEl?parceiroNomeEl.value:"").trim();
+      if(!parceiroNome){toast("Selecione o arm\u00e1rio.","error");if(parceiroNomeEl)parceiroNomeEl.focus();return;}
+      val="Arm\u00e1rio: "+parceiroNome;
     }
     var p=A.sel;if(!p)return;
     var targetStatus=A.pendingAdvance;
