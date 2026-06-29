@@ -221,10 +221,14 @@ input.money-input{font-family:var(--mono);text-align:right;}
 .divider{height:1px;background:var(--border);margin:1rem 0}
 .empty-state{text-align:center;padding:3rem;color:var(--muted)}
 .empty-state i{font-size:40px;display:block;margin-bottom:.75rem;opacity:.4}
-.pagination{display:flex;align-items:center;gap:.5rem;justify-content:center;padding:1rem;flex-wrap:wrap}
-.page-btn{padding:5px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;font-size:12px;font-family:var(--font)}
-.page-btn:hover{background:var(--surface2)}
-.page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pagination-bar{display:flex;align-items:center;justify-content:space-between;padding:.625rem 1rem;background:var(--surface2);border-top:1px solid var(--border);gap:1rem;flex-wrap:wrap}
+.pg-info{font-size:12px;color:var(--muted);white-space:nowrap}
+.pg-nav{display:flex;align-items:center;gap:.25rem}
+.pg-per-select{height:28px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;background:var(--surface);color:var(--text);cursor:pointer}
+.page-btn{min-width:30px;height:28px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;font-size:12px;font-family:var(--font);color:var(--text);transition:background .1s}
+.page-btn:hover:not([disabled]){background:var(--surface2)}
+.page-btn[disabled]{opacity:.4;cursor:not-allowed}
+.page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
 .page-info{font-size:12px;color:var(--muted);padding:0 .5rem}
 .modal-pipeline{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;margin-bottom:2px}
 .mp-step{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;border:1px solid transparent}
@@ -242,8 +246,8 @@ input.money-input{font-family:var(--mono);text-align:right;}
 .summary-pend i{flex-shrink:0;margin-top:1px}
 .summary-comment{background:var(--surface2);border-radius:var(--r);padding:.6rem .75rem;margin-bottom:.5rem;font-size:12px}
 .summary-comment-header{display:flex;justify-content:space-between;margin-bottom:3px;font-size:11px}
-.pagination{display:flex;align-items:center;gap:.5rem;justify-content:center;padding:1rem;flex-wrap:wrap}
-.page-btn{padding:5px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;font-size:12px;font-family:var(--font)}
+
+
 .page-btn:hover{background:var(--surface2)}
 .page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .page-info{font-size:12px;color:var(--muted);padding:0 .5rem}
@@ -427,13 +431,15 @@ var DCL = {
 };
 var db = null;
 var auth = null;
+// Init perPage from localStorage
+(function(){var stored=localStorage.getItem('pgPerPage');if(stored){var n=parseInt(stored);if([10,25,50,100].indexOf(n)>=0)window._initPerPage=n;}}());
 var A = {
   user:null,page:"processos",modal:null,
   processes:[],users:[],checklists:JSON.parse(JSON.stringify(DCL)),
   nats:JSON.parse(JSON.stringify(NATS)),
   sel:null,tab:"dados",
   search:"",fnat:"",fst:"",fdf:"",fdt:"",fdf2:"dataAbertura",
-  page2:1,perPage:50,
+  page2:1,perPage:(window._initPerPage||50),
   ecl:null,sync:false,unsub:null,pipe:null,
   cy:new Date().getFullYear(),cm:new Date().getMonth(),
   ftr:[{n:"",c:"",e:"",cj:"",prof:""}],fad:[{n:"",c:"",e:"",cj:"",prof:""}],fnat2:"compra_venda_urbano",
@@ -970,28 +976,6 @@ function rProc(){
   +'<input type="date" class="filter-date" id="fDT" value="'+A.fdt+'" title="Ate">'
   +'<button class="btn btn-secondary btn-sm" id="bCF"><i class="ti ti-x"></i></button></div>';
 
-  if(totPages>1){
-    h+='<div class="pagination">';
-    h+='<button class="page-btn" id="bPgPrev" '+(A.page2===1?"disabled":"")+'><i class="ti ti-chevron-left"></i></button>';
-    var pStart=Math.max(1,A.page2-2),pEnd=Math.min(totPages,A.page2+2);
-    if(pStart>1)h+='<button class="page-btn" data-pg="1">1</button>'+(pStart>2?'<span class="page-info">...</span>':'')
-    for(var pg=pStart;pg<=pEnd;pg++)h+='<button class="page-btn'+(pg===A.page2?" active":"")+'" data-pg="'+pg+'">'+pg+'</button>';
-    if(pEnd<totPages)h+=(pEnd<totPages-1?'<span class="page-info">...</span>':'')+'<button class="page-btn" data-pg="'+totPages+'">'+totPages+'</button>';
-    h+='<button class="page-btn" id="bPgNext" '+(A.page2===totPages?"disabled":"")+'><i class="ti ti-chevron-right"></i></button>';
-    h+='<span class="page-info">Pag '+A.page2+'/'+totPages+' | '+filt.length+' total</span>';
-    h+='</div>';
-  }
-  if(totPages>1){
-    h+='<div class="pagination">';
-    h+='<button class="page-btn" id="bPgPrev"'+(A.page2===1?' disabled':'')+'>&#8249;</button>';
-    var pS2=Math.max(1,A.page2-2),pE2=Math.min(totPages,A.page2+2);
-    if(pS2>1){h+='<button class="page-btn" data-pg="1">1</button>';if(pS2>2)h+='<span class="page-info">...</span>';}
-    for(var pg2=pS2;pg2<=pE2;pg2++)h+='<button class="page-btn'+(pg2===A.page2?' active':'')+' " data-pg="'+pg2+'">'+pg2+'</button>';
-    if(pE2<totPages){if(pE2<totPages-1)h+='<span class="page-info">...</span>';h+='<button class="page-btn" data-pg="'+totPages+'">'+totPages+'</button>';}
-    h+='<button class="page-btn" id="bPgNext"'+(A.page2===totPages?' disabled':'')+'>&#8250;</button>';
-    h+='<span class="page-info">Pag '+A.page2+'/'+totPages+' | '+filt.length+' total</span>';
-    h+='</div>';
-  }
   h+='<div class="card" style="padding:0;overflow:hidden"><div class="table-wrap"><table>'
   +'<thead><tr><th>Protocolo</th><th>Natureza</th><th>Transmitente(s)</th><th>Adquirente(s)</th><th>Matricula</th><th>Abertura</th><th>Assinatura</th><th>Status</th><th>Docs</th><th class="no-print">Acoes</th></tr></thead><tbody>';
   // Pagination slicing
@@ -1025,7 +1009,28 @@ function rProc(){
     +(A.user.role==="supervisor"?'<button class="btn btn-danger btn-sm" data-dl="'+fp.id+'"><i class="ti ti-trash"></i></button>':"")
     +'</div></td></tr>';
   }
-  h+='</tbody></table></div></div>';return h;
+  h+='</tbody></table></div>';
+  // Pagination footer bar
+  var pgFrom=(A.page2-1)*A.perPage+1;
+  var pgTo=Math.min(A.page2*A.perPage,filt.length);
+  h+='<div class="pagination-bar">';
+  h+='<div style="display:flex;align-items:center;gap:.5rem">';
+  h+='<span class="pg-info">Itens por p\u00e1gina:</span>';
+  h+='<select class="pg-per-select" id="pgPerPage">';
+  h+='<option value="10"'+(A.perPage===10?' selected':'')+'>10</option>';
+  h+='<option value="25"'+(A.perPage===25?' selected':'')+'>25</option>';
+  h+='<option value="50"'+(A.perPage===50?' selected':'')+'>50</option>';
+  h+='<option value="100"'+(A.perPage===100?' selected':'')+'>100</option>';
+  h+='</select></div>';
+  h+='<span class="pg-info">'+pgFrom+' \u2013 '+pgTo+' de '+filt.length+' protocolos</span>';
+  h+='<div class="pg-nav">';
+  h+='<button class="page-btn" id="bPgPrev"'+(A.page2===1?' disabled':'')+' title="Anterior">\u2039</button>';
+  h+='<span class="pg-info" style="padding:0 .5rem">'+A.page2+' / '+totPages+'</span>';
+  h+='<button class="page-btn" id="bPgNext"'+(A.page2===totPages?' disabled':'')+' title="Pr\u00f3xima">\u203a</button>';
+  h+='</div>';
+  h+='</div>';
+  h+='</div>';
+  return h;
 }
 
 function rCal(){
@@ -8776,6 +8781,14 @@ bindOrcRapidos();
   if(bPgNextEl)bPgNextEl.onclick=function(){var ocElPg2=document.getElementById("orcCliente");if(ocElPg2&&A.orc)A.orc.cliente=ocElPg2.value;A.page2++;render();};
   var pgBtns=document.querySelectorAll("[data-pg]");
   for(var pgi=0;pgi<pgBtns.length;pgi++)(function(btn){btn.onclick=function(){A.page2=parseInt(btn.dataset.pg);render();};})(pgBtns[pgi]);
+  // Items per page selector
+  var pgPerEl=document.getElementById("pgPerPage");
+  if(pgPerEl)pgPerEl.onchange=function(){
+    A.perPage=parseInt(pgPerEl.value);
+    localStorage.setItem("pgPerPage",pgPerEl.value);
+    A.page2=1;
+    render();
+  };
   var bVerTodosEl=document.getElementById("bVerTodos");
   if(bVerTodosEl)bVerTodosEl.onclick=function(e){e.preventDefault();A.fdf=new Date(2000,0,1).toISOString().split("T")[0];A.fdf2="dataAbertura";A.page2=1;render();};
   // Arquivo page binding
