@@ -551,13 +551,17 @@ function canBack(p){
 function ssy(v){A.sync=v;var d=document.querySelector(".sync-dot");if(d)d.className="sync-dot"+(v?" syncing":"");var t=document.querySelector(".sync-text");if(t)t.textContent=v?"Salvando...":"Sincronizado";}
 function toast(msg,tp){var e=document.querySelector(".toast");if(e)e.remove();var t=document.createElement("div");t.className="toast";t.innerHTML='<i class="ti ti-'+(tp==="error"?"alert-triangle":"check")+'"></i> '+msg;if(tp==="error")t.style.background="var(--red)";document.body.appendChild(t);setTimeout(function(){t.remove();},3000);}
 function notifs(){
-  var r=[],today=new Date();today.setHours(0,0,0,0);
+  var r=[],todayNoon=new Date();todayNoon.setHours(12,0,0,0);
   for(var i=0;i<A.processes.length;i++){
-    var p=A.processes[i];if(p.status==="registro")continue;
-    var d=days(p);
-    if(d>5)r.push({tp:"danger",proto:p.protocol,id:p.id,msg:"Parado ha "+d+" dias na etapa "+gs(p.status||"cadastrado").label});
-    else if(d>2)r.push({tp:"warning",proto:p.protocol,id:p.id,msg:d+" dias na etapa "+gs(p.status||"cadastrado").label});
-    if(p.dataAssinatura){var df=Math.ceil((new Date(p.dataAssinatura+"T12:00:00")-today)/86400000);if(df>=0&&df<=3)r.push({tp:"info",proto:p.protocol,id:p.id,msg:"Assinatura em "+(df===0?"hoje":df+" dia(s)")+" - "+pn(p.transmitentes)});}
+    var p=A.processes[i];
+    var st=p.status||"cadastrado";
+    if(st==="cancelado")continue;
+    // Only alert if process has NOT yet reached "finalizado" or beyond
+    var stepNow=gs(st).step;
+    if(stepNow>=6)continue; // finalizado=6, aguard_assinatura=7, assinado=8, registro=9
+    if(!p.dataAssinatura)continue;
+    var df=Math.round((new Date(p.dataAssinatura+"T12:00:00")-todayNoon)/86400000);
+    if(df<=2)r.push({tp:df<0?"danger":"warning",proto:p.protocol,id:p.id,msg:"Assinatura "+(df<0?"atrasada ha "+Math.abs(df)+" dia(s)":df===0?"hoje":df===1?"em 1 dia":"em "+df+" dias")+" - "+pn(p.transmitentes)});
   }
   return r;
 }
