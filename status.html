@@ -81,6 +81,7 @@ var STEPS=[
   {key:"cadastrado",        label:"Cadastrado"},
   {key:"minutando",         label:"Minutando"},
   {key:"conferindo",        label:"Conferindo"},
+  {key:"finalizado",        label:"Finalizado"},
   {key:"aguard_assinatura", label:"Aguard.\nAssin."},
   {key:"registro",          label:"Registrando"},
 ];
@@ -101,7 +102,16 @@ function gs(k){for(var i=0;i<STS.length;i++)if(STS[i].key===k)return STS[i];retu
 function ex(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function fd(s){if(!s)return null;try{return new Date(s).toLocaleDateString("pt-BR");}catch(e){return s;}}
 function fdt(s){if(!s)return null;try{return new Date(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return s;}}
-function stepIdx(status){var s=gs(status);var n=s.step||1;return n<=1?0:n===2?1:n===3?2:n===4?3:4;}
+function stepIdx(status){
+  for(var i=0;i<STEPS.length;i++)if(STEPS[i].key===status)return i;
+  // Fallback for statuses not directly in STEPS (e.g. para_conferir, assinado, concluido)
+  var s=gs(status);var n=s.step||1;
+  if(n<=1)return 0;
+  if(n===2)return 1;
+  if(n===3)return 2;
+  if(n===4)return 4;
+  return 5;
+}
 
 function render(d){
   // d = token document data (already contains everything needed)
