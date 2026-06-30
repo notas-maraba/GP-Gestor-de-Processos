@@ -561,6 +561,7 @@ function notifs(){
     if(stepNow>=6)continue; // finalizado=6, aguard_assinatura=7, assinado=8, registro=9
     if(!p.dataAssinatura)continue;
     var df=Math.round((new Date(p.dataAssinatura+"T12:00:00")-todayNoon)/86400000);
+    if(df<-30)continue; // ignore signing dates overdue by more than 30 days
     if(df<=2)r.push({tp:df<0?"danger":"warning",proto:p.protocol,id:p.id,msg:"Assinatura "+(df<0?"atrasada ha "+Math.abs(df)+" dia(s)":df===0?"hoje":df===1?"em 1 dia":"em "+df+" dias")+" - "+pn(p.transmitentes)});
   }
   return r;
