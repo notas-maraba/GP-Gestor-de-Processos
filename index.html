@@ -1669,6 +1669,9 @@ function mVer(){
   +'<option value="concluido">Concluido</option>'
   +'</select>'
   :"")
+  +(["finalizado","aguard_assinatura","assinado"].indexOf(s.key)>=0&&p.armario
+    ?'<div style="margin-left:auto;font-size:16px;font-weight:700;color:#0d9488;white-space:nowrap"><i class="ti ti-archive" style="font-size:14px;vertical-align:-1px"></i> '+ex(p.armario)+'</div>'
+    :"")
   +'</div>'
   +(s.key==="cancelado"?'<div style="background:#dc2626;color:#fff;padding:6px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px"><i class="ti ti-ban"></i> PROCESSO CANCELADO</div>':"")
   +'<div class="modal-body">'
@@ -1854,7 +1857,7 @@ function tComm(p){
   h+='<div id="mentionList" style="display:none;position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);max-height:150px;overflow-y:auto;z-index:10;min-width:180px"></div>';
   h+='<div style="padding:.6rem .75rem;border-top:1px solid var(--border);background:var(--surface)">';
   h+='<div style="display:flex;gap:8px;align-items:flex-end">'+avBadge(A.user?A.user.name:'',A.user?A.user.photo:null,32);
-  h+='<div style="flex:1;position:relative"><textarea id="nCm" placeholder="Mensagem... @ para mencionar (Ctrl+Enter envia)" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:12px;resize:none;font-size:13px;background:var(--surface2);color:var(--text);min-height:40px;max-height:120px;box-sizing:border-box"></textarea></div>';
+  h+='<div style="flex:1;position:relative"><textarea id="nCm" placeholder="Mensagem... @ para mencionar (Ctrl+Enter envia)" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:12px;resize:none;font-size:13px;background:var(--surface2);color:var(--text);min-height:40px;max-height:120px;box-sizing:border-box">'+ex((A.commentDrafts||{})[p.id]||'')+'</textarea></div>';
   h+='<button class="btn btn-primary" id="bAC" style="border-radius:50%;width:40px;height:40px;padding:0;flex-shrink:0;display:flex;align-items:center;justify-content:center"><i class="ti ti-send"></i></button></div>';
   h+='<div style="font-size:10px;color:var(--muted);margin-top:4px;padding-left:40px">Ctrl+Enter para enviar • @ para mencionar</div></div></div>';
   return h;
@@ -9758,6 +9761,7 @@ function bindModal(){
     ssy(false);
     p.comments=cs;p.unreadBy=unreadBy;p.mentionedUsers=mentionedUsers;
     for(var i=0;i<A.processes.length;i++)if(A.processes[i].id===p.id){A.processes[i]=JSON.parse(JSON.stringify(p));break;}
+    if(A.commentDrafts)delete A.commentDrafts[p.id];
     ov.innerHTML=gMH();bindModal();
     setTimeout(function(){var cm=document.getElementById("chatMsgs");if(cm)cm.scrollTop=cm.scrollHeight;},50);
   });
@@ -9768,6 +9772,8 @@ function bindModal(){
       ncEl.onkeydown=function(e){if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){sendC();e.preventDefault();}};
       ncEl.oninput=function(){
         this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';
+        if(!A.commentDrafts)A.commentDrafts={};
+        if(this.value)A.commentDrafts[p.id]=this.value;else delete A.commentDrafts[p.id];
         var val=this.value,pos=this.selectionStart;
         var bc=val.substring(0,pos),am=bc.match(/@(\w*)$/),mList=document.getElementById("mentionList");
         if(am&&mList&&A.users){
