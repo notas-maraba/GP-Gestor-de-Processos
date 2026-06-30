@@ -43,6 +43,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .btn-danger{background:#fee2e2;color:var(--red);border:1px solid #fca5a5}
 .btn-success{background:#dcfce7;color:var(--green);border:1px solid #86efac}
 .btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 6px;font-size:12px;min-width:auto}
 .btn-full{width:100%;justify-content:center}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .error-msg{color:var(--red);font-size:12px;padding:8px 10px;background:#fee2e2;border-radius:var(--r);margin-top:6px}
@@ -92,8 +93,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .pipe-step.active{outline:3px solid var(--accent);outline-offset:-3px;z-index:1}
 .table-wrap{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 280px)}
 table{width:100%;border-collapse:collapse}
-th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);background:var(--surface2);white-space:nowrap;position:sticky;top:0;z-index:2;background:var(--surface)}
-td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:13px}
+.td-trunc{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);background:var(--surface2);white-space:nowrap;position:sticky;top:0;z-index:2;background:var(--surface)}
+td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:13px}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#fafaf8}
 .proto-num{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);background:#e8f0f8;padding:3px 8px;border-radius:4px;white-space:nowrap}
@@ -991,22 +993,30 @@ function rProc(){
     h+='<tr>'
     +'<td><span class="proto-num">'+ex(fp.protocol)+'</span></td>'
     +'<td><span class="badge '+fn.badge+'" style="font-size:10px">'+fn.label.split(" ").slice(0,2).join(" ")+'</span></td>'
-    +'<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+ex(trN)+'">'+ex(trN)+(fp.transmitentes&&fp.transmitentes.length>1?'<br><span class="text-xs text-muted">'+fp.transmitentes.length+' partes</span>':"")+'</td>'
-    +'<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ex(adN)+'</td>'
-    +'<td style="font-family:var(--mono);font-size:11px">'+ex(fp.matriculas||"---")+'</td>'
+    +'<td style="max-width:105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+ex(trN)+'">'+ex(trN)+(fp.transmitentes&&fp.transmitentes.length>1?'<br><span class="text-xs text-muted">'+fp.transmitentes.length+' partes</span>':"")+'</td>'
+    +'<td style="max-width:105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ex(adN)+'</td>'
+    +'<td style="font-family:var(--mono);font-size:11px;max-width:90px">'
+    +(function(){
+      var matStr=fp.matriculas||'';
+      if(!matStr)return '---';
+      var mats=matStr.split(',').map(function(s){return s.trim();}).filter(Boolean);
+      if(mats.length<=1)return ex(matStr);
+      return mats.map(function(m){return '<div>'+ex(m)+'</div>';}).join('');
+    })()
+    +'</td>'
     +'<td class="text-sm text-muted">'+fd(fp.dataAbertura)+'</td>'
     +'<td class="text-sm">'+(fp.dataAssinatura?'<span style="color:'+(asp?"var(--green)":"inherit")+';font-weight:'+(asp?"600":"400")+'">'+fd(fp.dataAssinatura)+(asp?" &#128197;":"")+'</span>':"---")+'</td>'
     +'<td><span class="status-badge '+fs.cls+'">'+fs.label+'</span>'+(fd2>3?' <span class="stale-badge">&#9888;'+fd2+'d</span>':"")+(function(){if(fp.status==="cadastrado"){var cu2=getUserById(fp.createdBy);if(cu2){var cu2nome=cu2.name||cu2.email||"";return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px">'+avBadge(cu2nome,cu2.photo||null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(cu2nome.split(" ")[0])+'</span></div>';}return "";}if(fp.status==="minutando"){if(fp.minutadoPorNome){var mu=getUserById(fp.minutadoPor);return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer" data-resp-jump="'+(fp.minutadoPor||'')+'">'+avBadge(fp.minutadoPorNome,mu?mu.photo:null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(fp.minutadoPorNome.split(" ")[0])+'</span></div>';}return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem responsavel</div>';}if(fp.status==="conferindo"){if(fp.conferidoPorNome){var cu=getUserById(fp.conferidoPor);return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer" data-resp-jump="'+(fp.conferidoPor||'')+'">'+avBadge(fp.conferidoPorNome,cu?cu.photo:null,18)+'<span style="font-size:11px;color:var(--muted)">'+ex(fp.conferidoPorNome.split(" ")[0])+'</span></div>';}return '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem responsavel</div>';}if(fp.status==="registro"){return fp.protocoloRegistro?'<div style="margin-top:4px;font-size:10px;color:#0369a1;font-weight:600"><i class="ti ti-building-bank"></i> '+ex(fp.protocoloRegistro)+'</div>':'<div style="margin-top:4px;font-size:10px;color:#d97706"><i class="ti ti-alert-triangle"></i> Sem protocolo</div>';}if((fp.status==="finalizado"||fp.status==="aguard_assinatura"||fp.status==="assinado")&&fp.armario){var arm=fp.armario;var armParts=arm.split(" ");var armDisplay=armParts.length>=2?armParts[0]+' <strong>'+armParts.slice(1).join(' ')+'</strong>':arm;return '<div style="margin-top:4px;font-size:10px;color:#0d9488"><i class="ti ti-archive"></i> '+armDisplay+'</div>';}return '';})()+'</td>'
     +'<td><div style="display:flex;align-items:center;gap:5px"><div style="width:40px;height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:'+fpg.pct+'%;height:100%;background:'+(fpg.pct===100?"var(--green)":"var(--accent)")+'"></div></div><span class="text-xs text-muted">'+fpg.done+"/"+fpg.total+'</span></div></td>'
-    +'<td class="no-print"><div class="flex gap-sm">'
-    +'<button class="btn btn-info btn-sm" data-rs="'+fp.id+'" title="Resumo rapido"><i class="ti ti-eye"></i></button>'
-    +'<button class="btn btn-secondary btn-sm" data-op="'+fp.id+'" title="Abrir protocolo"><i class="ti ti-folder-open"></i></button>'
-    +'<button class="btn btn-primary btn-sm" data-chat="'+fp.id+'" title="Abrir chat" style="position:relative">'
+    +'<td class="no-print"><div class="flex" style="gap:.25rem">'
+    +'<button class="btn btn-info btn-xs" data-rs="'+fp.id+'" title="Resumo rapido"><i class="ti ti-eye"></i></button>'
+    +'<button class="btn btn-secondary btn-xs" data-op="'+fp.id+'" title="Abrir protocolo"><i class="ti ti-folder-open"></i></button>'
+    +'<button class="btn btn-primary btn-xs" data-chat="'+fp.id+'" title="Abrir chat" style="position:relative">'
     +'<i class="ti ti-message-circle"></i>'
     +((fp.unreadBy&&fp.unreadBy[A.user.id]&&fp.unreadBy[A.user.id]>0)?'<span style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">'+fp.unreadBy[A.user.id]+'</span>':'')
     +'</button>'
-    +'<button class="btn btn-secondary btn-sm" data-pr="'+fp.id+'" title="Imprimir capa"><i class="ti ti-printer"></i></button>'
-    +(A.user.role==="supervisor"?'<button class="btn btn-danger btn-sm" data-dl="'+fp.id+'"><i class="ti ti-trash"></i></button>':"")
+    +'<button class="btn btn-secondary btn-xs" data-pr="'+fp.id+'" title="Imprimir capa"><i class="ti ti-printer"></i></button>'
+    +(A.user.role==="supervisor"?'<button class="btn btn-danger btn-xs" data-dl="'+fp.id+'"><i class="ti ti-trash"></i></button>':"")
     +'</div></td></tr>';
   }
   h+='</tbody></table></div>';
@@ -1581,7 +1591,7 @@ function mNovo(){
       var im=imoveis[ii]||{};
       h+='<div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;background:var(--surface2);padding:6px 8px;border-radius:var(--r)">';
       h+='<span style="font-size:12px;font-weight:600;color:var(--accent);min-width:65px">Imovel '+(ii+1)+'</span>';
-      h+='<input type="text" class="fVl-mat" data-vi="'+ii+'" value="'+ex(im.mat||'')+'" placeholder="Matricula" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
+      h+='<input type="text" class="fVl-mat" data-vi="'+ii+'" value="'+ex(im.mat||'')+'" placeholder="Matricula" maxlength="6" inputmode="numeric" pattern="[0-9]*" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
       h+='<span style="color:var(--muted);font-size:13px">-</span>';
       h+='<input type="text" class="fVl-imovel" data-vi="'+ii+'" value="'+ex(im.val||'')+'" placeholder="R$ 0,00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px">';
       h+=(imoveis.length>1?'<button class="btn btn-danger btn-sm" data-rem-fvl="'+ii+'"><i class="ti ti-x"></i></button>':'');
