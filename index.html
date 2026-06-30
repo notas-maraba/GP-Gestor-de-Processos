@@ -48,10 +48,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .error-msg{color:var(--red);font-size:12px;padding:8px 10px;background:#fee2e2;border-radius:var(--r);margin-top:6px}
 .topbar{background:var(--accent);color:#fff;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:52px;position:sticky;top:0;z-index:100}
-.score-pill{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;color:#fff}
-.score-live{display:flex;gap:6px;align-items:center;overflow:hidden;flex-wrap:nowrap}
-.score-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse-dot 1s infinite;flex-shrink:0}
-@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
 .topbar-brand{font-size:14px;font-weight:600;flex:1}
 .topbar-brand span{color:var(--accent2);font-family:var(--mono);font-size:11px;display:block;font-weight:400}
 .topbar-user{font-size:12px;color:rgba(255,255,255,.85);display:flex;align-items:center;gap:8px}
@@ -623,38 +619,9 @@ function loadD(){
     else{A.users=s.docs.map(function(d){return d.data();});if(loadSession()){loadTabelaEmolumentos();loadUserTheme();subP();startVersionCheck();}else{loadCL();}}
   }).catch(function(e){document.getElementById("app").innerHTML='<div class="loading-screen"><div style="color:#f87171">Erro: '+e.message+'</div></div>';});
 }
-function fetchLiveScores(){
-  // Subscribe to live scores in Firebase (real-time)
-  if(window._scoreUnsub)return; // already subscribed
-  window._scoreUnsub=db.collection("config").doc("liveScores")
-    .onSnapshot(function(doc){
-      if(doc.exists){
-        var data=doc.data();
-        A.liveScores=data.scores||[];
-        A.liveScoresUpdatedAt=data.updatedAt||"";
-      } else {
-        A.liveScores=[];
-      }
-      render();
-    },function(){A.liveScores=[];});
-}
 
-function updateLiveScores(scores, updatedAt){
-  // Write scores to Firebase (only works when authenticated)
-  return db.collection("config").doc("liveScores").set({
-    scores: scores,
-    updatedAt: updatedAt||new Date().toLocaleString("pt-BR"),
-    competition: "FIFA Copa do Mundo 2026"
-  });
-}
 
 function loadCL(){
-  // Init live scores state from localStorage
-  if(A.showScores===undefined)A.showScores=localStorage.getItem("showScores")!=="0";
-  A.liveScores=A.liveScores||[];
-  A.worldCupScores=A.worldCupScores||[];
-  // Subscribe to live scores (onSnapshot - real-time, no polling needed)
-  fetchLiveScores();
   db.collection("config").doc("checklists").get().then(function(s){
     if(s.exists){
       // ALWAYS use firebase data - never overwrite with defaults
@@ -835,9 +802,6 @@ function appHTML(){
   return '<div class="topbar no-print">'
   +'<div class="topbar-brand" style="display:flex;align-items:center"><img src=\"data:image/png;base64,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\" style=\"height:38px;width:38px;object-fit:contain;border-radius:4px;flex-shrink:0;margin-right:8px\" alt=\"GP\"><div style="display:flex;flex-direction:column"><span>1 Tabelionato de Notas e Registro de Imoveis de Maraba</span><span>Sistema de Gestao de Protocolos v4.0</span><span style="color:rgba(255,255,255,.5);font-family:var(--mono);font-size:10px;font-weight:400">Dev: Marcos Souza de Castro - (94) 99176-8840</span></div></div>'
   +'<div class="flex items-center gap-sm" style="color:rgba(255,255,255,.7);font-size:11px"><div class="sync-dot'+(A.sync?" syncing":"")+'"></div><span class="sync-text">'+(A.sync?"Salvando...":"Sincronizado")+'</span></div>'
-  +(A.showScores!==false&&A.liveScores&&A.liveScores.length?'<div class="score-live" id="scoreBar"><div class="score-dot"></div>'+A.liveScores.map(function(g){return '<span class="score-pill">'+g+'</span>';}).join('')+'</div>':"")
-  +(A.user&&A.user.role==="supervisor"?'<button id="bUpdateScores" title="Atualizar placar agora" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:4px;cursor:pointer;color:#fff;font-size:11px;padding:2px 6px;flex-shrink:0">&#9917; Atualizar</button>':"")
-  +'<button id="bToggleScores" title="Mostrar/ocultar placar" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.7);font-size:15px;padding:2px 4px;flex-shrink:0">'+(A.showScores!==false?"&#9917;":"&#9917;")+'</button>'
   +'<div class="topbar-user">'+(A.isOnline===false?'<span style="display:flex;align-items:center;gap:4px;background:#dc2626;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;margin-right:6px"><i class="ti ti-wifi-off"></i> OFFLINE</span>':'<span style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.15);color:#a7f3d0;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;margin-right:6px"><i class="ti ti-wifi"></i> Online</span>')+avBadge(A.user.name,A.user.photo,30)+'<span>'+ex(A.user.name)+'</span>'
   +'<span style="font-size:10px;opacity:.6;background:rgba(255,255,255,.1);padding:2px 7px;border-radius:10px">'+roleLabel(A.user.role)+'</span>'
   +'<button class="btn-logout" id="bTheme" title="Alternar tema" style="background:none;border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;cursor:pointer;color:var(--text);margin-right:4px">'+(A.user&&A.user.tema==="dark"?'<i class="ti ti-sun"></i>':'<i class="ti ti-moon"></i>')+'</button>'
@@ -8201,35 +8165,10 @@ function checkArmarioFirst(p, callback){
   }
   return false; // not intercepted, proceed normally
 }
+
 function bindApp(){
   var bThemeEl=document.getElementById('bTheme');
   if(bThemeEl)bThemeEl.onclick=toggleTheme;
-  // Live scores toggle + update
-  var bTogScores=document.getElementById("bToggleScores");
-  if(bTogScores)bTogScores.onclick=function(){
-    A.showScores=A.showScores===false?true:false;
-    localStorage.setItem("showScores",A.showScores?"1":"0");
-    render();
-  };
-  var bUpdScores=document.getElementById("bUpdateScores");
-  if(bUpdScores)bUpdScores.onclick=function(){
-    // Simple prompt to enter scores manually
-    var current=(A.liveScores||[]).join("\n")||"";
-    var input=prompt(
-      "Placares ao vivo da Copa do Mundo:\n"+
-      "Digite um jogo por linha no formato:\n"+
-      "\uD83C\uDDF3\uD83C\uDDF4 NOR 1\u00d73 \uD83C\uDDEB\uD83C\uDDF7 FRA\n\n"+
-      "Apague tudo para remover os placares.",
-      current
-    );
-    if(input===null)return; // cancelled
-    var lines=input.split("\n").map(function(s){return s.trim();}).filter(Boolean);
-    var now=new Date().toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
-    updateLiveScores(lines, now)
-      .then(function(){toast(lines.length?"Placar atualizado! "+lines.length+" jogo(s) ao vivo.":"Placar removido.");})
-      .catch(function(e){toast("Erro: "+e.message,"error");});
-  };
-
   document.getElementById("bOut").onclick=function(){if(auth)auth.signOut();clearSession();A.user=null;applyTheme('light');render();};
   var nvs=document.querySelectorAll(".nav-item[data-page]");
   for(var i=0;i<nvs.length;i++)(function(el){el.onclick=function(){
