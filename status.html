@@ -70,6 +70,7 @@ var STS=[
   {key:"minutando",         label:"Minutando",            step:2,bg:"#fef9c3",color:"#854d0e"},
   {key:"para_conferir",     label:"Para Conferir",        step:2,bg:"#ffedd5",color:"#9a3412"},
   {key:"conferindo",        label:"Conferindo",           step:3,bg:"#dbeafe",color:"#1e40af"},
+  {key:"finalizado",        label:"Finalizado",           step:3,bg:"#ccfbf1",color:"#0d9488"},
   {key:"aguard_assinatura", label:"Aguard. Assinatura",   step:4,bg:"#f3e8ff",color:"#6b21a8"},
   {key:"assinado",          label:"Assinado",             step:4,bg:"#dcfce7",color:"#166534"},
   {key:"registro",          label:"Em Registro",          step:5,bg:"#e0f2fe",color:"#0369a1"},
@@ -88,6 +89,7 @@ var MSGS={
   minutando:     {t:"Seu processo está sendo preparado pela nossa equipe. Em breve estará pronto para revisão.",c:"info"},
   para_conferir: {t:"A preparação foi concluída e seu processo aguarda revisão técnica.",c:"info"},
   conferindo:    {t:"Seu processo está passando por revisão técnica detalhada.",c:"info"},
+  finalizado:    {t:"Seu processo foi finalizado e está sendo preparado para assinatura.",c:"info"},
   aguard_assinatura:{t:"✅ Seu processo está pronto para assinatura! Entre em contato com o cartório para agendar.",c:"ok"},
   assinado:      {t:"Seu processo foi assinado e está sendo encaminhado para registro.",c:"info"},
   registro:      {t:"⏳ Seu processo assinado está em fase de registro final.",c:"warn"},
@@ -95,7 +97,7 @@ var MSGS={
   cancelado:     {t:"❌ Este processo foi cancelado. Entre em contato com o cartório para mais informações.",c:"err"},
 };
 
-function gs(k){for(var i=0;i<STS.length;i++)if(STS[i].key===k)return STS[i];return STS[0];}
+function gs(k){for(var i=0;i<STS.length;i++)if(STS[i].key===k)return STS[i];return STS[STS.length-1];}
 function ex(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function fd(s){if(!s)return null;try{return new Date(s).toLocaleDateString("pt-BR");}catch(e){return s;}}
 function fdt(s){if(!s)return null;try{return new Date(s).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return s;}}
